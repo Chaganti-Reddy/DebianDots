@@ -1,0 +1,32 @@
+#!/usr/bin/env bash
+#
+# Script name: dm-man
+# Description: Search for a manpage or get a random one.
+# Dependencies: dmenu, xargs
+
+  # An array of options to choose.
+  _options=( "Search manpages" "Random manpage" "Quit")
+  # Piping the above array into dmenu.
+  # We use "printf '%s\n'" to format the array one item to a line.
+  choice=$(printf '%s\n' "${_options[@]}" | rofi -dmenu -theme ~/.config/rofi/dt-center.rasi -i -l 10 -p 'Manpages:' "$@")
+
+  # What to do when/if we choose one of the options.
+  case "$choice" in
+    'Search manpages')
+          # shellcheck disable=SC2086
+          man -k . | awk '{$3="-"; print $0}' | \
+          rofi -dmenu -theme ~/.config/rofi/dt-center.rasi -i -l 10 -p 'Search for:' | \
+          awk '{print $2, $1}' | tr -d '()' | xargs kitty -e man
+    ;;
+    'Random manpage')
+          # shellcheck disable=SC2086
+          man -k . | cut -d' ' -f1 | shuf -n 1 | \
+          rofi -dmenu -theme ~/.config/rofi/dt-center.rasi -i -l 10 -p 'Random manpage:' | xargs kitty -e man
+    ;;
+    'Quit')
+      echo "Program terminated." && exit 0
+    ;;
+    *)
+      exit 0
+    ;;
+  esac

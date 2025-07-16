@@ -1,0 +1,166 @@
+#!/bin/bash
+
+LEARN_FILE="/mnt/Karna/Git/Project-K/learn.md"
+THEME="$HOME/.config/rofi/dt-center.rasi"
+
+declare -a menu_items
+declare -a task_refs
+
+current_section=""
+current_priority=""
+line_number=0
+
+menu_items+=("➕ Add task or section")
+task_refs+=("action:add")
+
+menu_items+=("🗑 Delete task")
+task_refs+=("action:delete")
+
+menu_items+=("──────────────")
+task_refs+=("separator")
+
+# Parse learn.md
+while IFS= read -r line; do
+    raw_line="$line"
+    trimmed=$(echo "$line" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+
+    if [[ "$trimmed" =~ ^\*+\ (Code\w+) ]]; then
+        current_priority="${BASH_REMATCH[1]}"
+    fi
+
+    if [[ "$trimmed" =~ ^##\ (.+) ]]; then
+        current_section="${BASH_REMATCH[1]}"
+        display_section="$current_section"
+        menu_items+=("📘 $display_section")
+        task_refs+=("section")
+    fi
+
+    if [[ "$trimmed" =~ ^###\ (.+) ]]; then
+        subsection_name="${BASH_REMATCH[1]}"
+        display_sub="$current_section → $subsection_name"
+        menu_items+=("📂 $display_sub")
+        task_refs+=("subsection:$current_section:$subsection_name")
+    fi
+
+    if [[ "$trimmed" =~ ^[-*]\ \[( |x)\]\ (.+) ]]; then
+      menu_items+=("  $trimmed")  # for visual indent only
+      task_refs+=("$line_number:$current_section:$trimmed")  # no leading space in actual reference
+    fi
+
+    ((line_number++))
+done < "$LEARN_FILE"
+
+# Show Rofi menu
+selection=$(printf '%s\n' "${menu_items[@]}" | rofi -dmenu -p "Learn Tracker")
+[[ -z "$selection" ]] && exit 0
+
+selected_index=$(printf '%s\n' "${menu_items[@]}" | awk -v sel="$selection" '{if ($0 == sel) print NR-1}')
+ref="${task_refs[$selected_index]}"
+
+case "$ref" in
+"action:add")
+    add_type=$(printf "➕ New section\n📁 Existing section" | rofi -dmenu -p "Where to add?")
+    [[ -z "$add_type" ]] && exit 0
+
+    if [[ "$add_type" == "➕ New section" ]]; then
+        new_section=$(rofi -dmenu -p "New section name:")
+        [[ -z "$new_section" ]] && exit 0
+
+        priority=$(printf "* CodeRed\n** CodeOrange\n*** CodeBlue\n**** CodeYellow\n***** CodeGreen" | rofi -dmenu -p "Select priority for $new_section")
+        [[ -z "$priority" ]] && exit 0
+
+        new_task=$(rofi -dmenu -p "First task for $new_section:")
+        [[ -z "$new_task" ]] && exit 0
+
+        {
+            echo ""
+            echo "$priority"
+            echo "## $new_section"
+            echo "- [ ] $new_task"
+        } >> "$LEARN_FILE"
+
+    elif [[ "$add_type" == "📁 Existing section" ]]; then
+        section_title=$(printf '%s\n' "${menu_items[@]}" | grep -E "📘|📂" | rofi -dmenu -p "Choose section/subsection:")
+        [[ -z "$section_title" ]] && exit 0
+
+        if [[ "$section_title" == 📘* ]]; then
+            target_header="## ${section_title/📘 /}"
+        else
+            target_section="${section_title/📂 /}"
+            target_header="### ${target_section#*→ }"
+        fi
+
+        new_task=$(rofi -dmenu -p "New task for $section_title:")
+        [[ -z "$new_task" ]] && exit 0
+
+        awk -v header="$target_header" -v content="- [ ] $new_task" '
+        BEGIN { in_target=0; last_task_line=0; inserted=0; line=0 }
+        {
+            line++
+            lines[line]=$0
+            if ($0 == header) {
+                in_target=1
+            } else if (in_target && $0 ~ /^## / && $0 != header) {
+                in_target=0
+            } else if (in_target && $0 ~ /^### / && $0 != header) {
+                in_target=0
+            } else if (in_target && $0 ~ /^[-*] \[[ x]\]/) {
+                last_task_line=line
+            }
+        }
+        END {
+            for (i = 1; i <= line; i++) {
+                print lines[i]
+                if (i == last_task_line && inserted == 0) {
+                    print content
+                    inserted=1
+                }
+            }
+            if (inserted == 0 && in_target == 1) {
+                print content
+            }
+        }' "$LEARN_FILE" > "$LEARN_FILE.tmp" && mv "$LEARN_FILE.tmp" "$LEARN_FILE"
+    fi
+    exit 0
+    ;;
+"action:delete")
+    task_to_delete=$(printf '%s\n' "${menu_items[@]}" | grep '\[.\]' | rofi -dmenu -p "Delete task")
+    [[ -z "$task_to_delete" ]] && exit 0
+
+    # Trim leading spaces
+    trimmed_task=$(echo "$task_to_delete" | sed 's/^ *//')
+
+    awk -v task="$trimmed_task" '
+    {
+        line = $0
+        gsub(/^ +/, "", line)
+        if (line != task) print $0
+    }
+    ' "$LEARN_FILE" > "$LEARN_FILE.tmp" && mv "$LEARN_FILE.tmp" "$LEARN_FILE"
+    exit 0
+    ;;
+"section"|"separator")
+    exit 0
+    ;;
+esac
+
+# ✅ Toggle task checkbox using only line number
+line_num="${ref%%:*}"
+rest="${ref#*:}"
+original_line="${rest#*:*}"
+
+# Determine toggled version
+if [[ "$original_line" == *"[ ]"* ]]; then
+    toggled_line="${original_line/\[ \]/[x]}"
+elif [[ "$original_line" == *"[x]"* ]]; then
+    toggled_line="${original_line/\[x\]/[ ]}"
+else
+    exit 0
+fi
+
+# Replace exact line by line number (no added indentation)
+awk -v lineno="$((line_num + 1))" -v newline="$toggled_line" '
+NR == lineno { print newline; next }
+{ print }
+' "$LEARN_FILE" > "$LEARN_FILE.tmp" && mv "$LEARN_FILE.tmp" "$LEARN_FILE"
+

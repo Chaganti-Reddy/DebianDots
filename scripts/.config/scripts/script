@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+
+declare -A options
+options=(["File Manager"]=~/.config/scripts/rofifm
+         ["Edit Config Files"]=~/.config/scripts/confedit
+         ["Open Dictionary"]=~/.config/scripts/dictionary
+         ["Kill an Existing Process"]=~/.config/scripts/kill 
+         ["Open Man Page of an Installed Program"]=~/.config/scripts/manpages 
+         ["Pick a color"]=~/.local/bin/dm-colpick 
+         ["Cross check the spelling"]=~/.config/scripts/spellcheck 
+         ["Search Through web(WebSearch)"]=~/.config/scripts/websearch 
+         ["Look through Arch Wiki Docs"]=~/.config/scripts/archwiki 
+         ["Watch YouTube Videos"]=~/.config/scripts/yt 
+         ["Open Youtube Video in MPV using URL"]=~/.config/scripts/mpv_yt 
+         ["Watch YouTube Playlists"]=~/.config/scripts/yt_plst 
+         ["Use Reddit Script for Images"]=~/.config/scripts/redyt
+         ["Download Some new wallpapers"]=/usr/local/bin/waldl
+         ["Execute Mouse Settings for Window Managers"]=~/.config/scripts/mouse)
+
+choice=$(printf '%s\n' "${!options[@]}" | sort -g | rofi -dmenu -i -l 15 -p 'Choose an Option: ' "${@}")
+
+if [ "$choice" ]; then
+    sh "${options[$choice]}"
+
+# What to do if we just escape without choosing anything.
+else
+    echo "Program terminated." && exit 0
+fi

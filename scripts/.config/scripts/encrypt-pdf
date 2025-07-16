@@ -1,0 +1,73 @@
+#!/bin/bash
+
+check_qpdf_installed() {
+    if ! command -v qpdf &> /dev/null; then
+        echo "❌ qpdf not found. Installing qpdf..."
+        sudo pacman -S --noconfirm qpdf
+    fi
+}
+
+check_encryption_status() {
+    local file="$1"
+    if qpdf --show-encryption "$file" 2>&1 | grep -q "File is not encrypted"; then
+        echo "🔓 The file '$file' is NOT encrypted."
+        return 1
+    else
+        echo "🔒 The file '$file' is ENCRYPTED."
+        return 0
+    fi
+}
+
+encrypt_pdf() {
+    local input_file="$1"
+    local output_file="${input_file%.pdf}_encrypt.pdf"
+
+    read -sp "Enter password to encrypt the file: " password
+    echo ""
+    
+    qpdf --encrypt "$password" "$password" 256 -- "$input_file" "$output_file"
+    echo "✅ Encrypted PDF saved as: $output_file"
+}
+
+decrypt_pdf() {
+    local input_file="$1"
+    local output_file="${input_file%.pdf}_decrypt.pdf"
+
+    read -sp "Enter password to decrypt the file: " password
+    echo ""
+
+    qpdf --password="$password" --decrypt "$input_file" "$output_file"
+    echo "✅ Decrypted PDF saved as: $output_file"
+}
+
+usage() {
+    echo "Usage: $0 filename.pdf"
+    exit 1
+}
+
+# Ensure filename is provided
+if [[ $# -ne 1 ]]; then
+    usage
+fi
+
+file="$1"
+
+# Check if the file exists
+if [[ ! -f "$file" ]]; then
+    echo "❌ Error: File '$file' does not exist."
+    exit 1
+fi
+
+# Ensure qpdf is installed
+check_qpdf_installed
+
+# Check encryption status
+check_encryption_status "$file"
+is_encrypted=$?
+
+# Perform action based on encryption status
+if [[ $is_encrypted -eq 1 ]]; then
+    encrypt_pdf "$file"
+else
+    decrypt_pdf "$file"
+fi

@@ -1,0 +1,73 @@
+#!/usr/bin/env bash
+
+EDITOR=xdg-open
+CUR_DIR=$HOME  # Start from home directory
+SHOW_HIDDEN=false  # Hidden files toggle
+
+# Define custom directories (modify these as needed)
+CUSTOM_DIRS=(
+    "📂 /mnt/Karna/"
+)
+
+while true; do
+    # Start with custom directories first
+    MENU=""
+    if [ "$CUR_DIR" == "$HOME" ]; then
+        for dir in "${CUSTOM_DIRS[@]}"; do
+            MENU+="$dir\n"
+        done
+    fi
+
+    # Add the ".. (Back)" option after custom directories
+    MENU+="📂 .. (Back)\n"
+
+    # List directories
+    for item in "$CUR_DIR"/*; do
+        [ -d "$item" ] && MENU+="📁 $(basename "$item")\n"
+    done
+
+    # List files
+    for item in "$CUR_DIR"/*; do
+        [ -f "$item" ] && MENU+="📄 $(basename "$item")\n"
+    done
+
+    # Include hidden files if toggled
+    if [ "$SHOW_HIDDEN" == "true" ]; then
+        for item in "$CUR_DIR"/.*; do
+            [[ -e "$item" && "$(basename "$item")" != "." && "$(basename "$item")" != ".." ]] && {
+                [ -d "$item" ] && MENU+="🫥 📁 $(basename "$item")\n"  # Hidden folder
+                [ -f "$item" ] && MENU+="🫥 📄 $(basename "$item")\n"  # Hidden file
+            }
+        done
+    fi
+
+    # Show menu in Rofi
+    CHOICE=$(echo -e "$MENU" | rofi -dmenu -theme ~/.config/rofi/dt-center.rasi \
+      -p "Browsing: ${CUR_DIR}" \
+      -kb-custom-1 "Alt+h" \
+      -i -matching fuzzy)
+
+    # Detect Alt+H press (toggle hidden files)
+    if [ $? -eq 10 ]; then
+        SHOW_HIDDEN=$([ "$SHOW_HIDDEN" == "false" ] && echo "true" || echo "false")
+        continue  # Restart loop to refresh the menu
+    fi
+
+    # Exit if no selection
+    [ -z "$CHOICE" ] && exit
+
+    # Remove the icon and extract actual file/folder name
+    CHOICE=$(echo "$CHOICE" | sed 's/^[^ ]* //')
+
+    # Handle navigation
+    if [ "$CHOICE" == ".. (Back)" ]; then
+        CUR_DIR=$(dirname "$CUR_DIR")  # Move up
+    elif [[ "$CHOICE" =~ ^/mnt/Karna ]]; then
+        CUR_DIR="/mnt/Karna"  # Directly open custom directory
+    elif [ -d "$CUR_DIR/$CHOICE" ]; then
+        CUR_DIR="$CUR_DIR/$CHOICE"  # Move into the selected directory
+    elif [ -f "$CUR_DIR/$CHOICE" ]; then
+        coproc ( ${EDITOR} "$CUR_DIR/$CHOICE" & > /dev/null 2>&1 )  # Open file
+        exit
+    fi
+done

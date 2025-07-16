@@ -1,0 +1,107 @@
+#!/bin/bash
+
+TODO_FILE="$HOME/todo.md"
+TODAY=$(date +"%Y-%m-%d")
+
+if [ ! -f "$TODO_FILE" ]; then
+  touch "$TODO_FILE"
+fi
+
+declare -a menu_items
+declare -a task_refs
+
+line_number=0
+current_date=""
+date_already_shown=false
+
+# Insert top menu options
+menu_items+=("➕ Add new task")
+task_refs+=("action:add")
+
+menu_items+=("🗑 Delete a task")
+task_refs+=("action:delete")
+
+menu_items+=("──────────────")
+task_refs+=("separator")
+
+# Read and parse the file
+while IFS= read -r line; do
+    if [[ $line =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]]; then
+        current_date="$line"
+        date_already_shown=false
+    elif [[ $line =~ ^- ]]; then
+        show_line=false
+
+        if [[ "$current_date" == "$TODAY" ]]; then
+            show_line=true
+        elif [[ "$current_date" < "$TODAY" ]]; then
+            if echo "$line" | grep -q '^- \[ \]'; then
+                show_line=true
+            fi
+        fi
+
+        if $show_line; then
+            if ! $date_already_shown; then
+                menu_items+=("$current_date")
+                task_refs+=("date")
+                date_already_shown=true
+            fi
+            menu_items+=("  $line")
+            task_refs+=("$line_number:$line")
+        fi
+    fi
+    ((line_number++))
+done < "$TODO_FILE"
+
+# Show menu
+selection=$(printf '%s\n' "${menu_items[@]}" | rofi -dmenu -p "ToDo")
+[[ -z "$selection" ]] && exit 0
+
+# Handle menu selection
+selected_index=$(printf '%s\n' "${menu_items[@]}" | awk -v sel="$selection" '{if ($0 == sel) print NR-1}')
+ref="${task_refs[$selected_index]}"
+
+case "$ref" in
+"action:add")
+    new_task=$(rofi -dmenu -p "New Task:")
+    [[ -z "$new_task" ]] && exit 0
+    new_entry="$TODAY"$'\n'"- [ ] $new_task"
+
+    if grep -q "^$TODAY\$" "$TODO_FILE"; then
+        awk -v date="$TODAY" -v task="- [ ] $new_task" '
+            $0 == date { print; print task; next }
+            { print }
+        ' "$TODO_FILE" > "$TODO_FILE.tmp" && mv "$TODO_FILE.tmp" "$TODO_FILE"
+    else
+        # Prepend today's date and task at the top
+        printf "%s\n\n%s" "$new_entry" "$(cat "$TODO_FILE")" > "$TODO_FILE.tmp" && mv "$TODO_FILE.tmp" "$TODO_FILE"
+    fi
+    exit 0
+    ;;
+
+    "action:delete")
+        task_to_delete=$(printf '%s\n' "${menu_items[@]}" | grep '^  ' | rofi -dmenu -p "Delete Task")
+        [[ -z "$task_to_delete" ]] && exit 0
+        task_to_delete="$(echo "$task_to_delete" | sed 's/^ *//')"
+        awk -v t="$task_to_delete" '$0 != t' "$TODO_FILE" > "$TODO_FILE.tmp" && mv "$TODO_FILE.tmp" "$TODO_FILE"
+        exit 0
+        ;;
+    "date"|"separator")
+        exit 0
+        ;;
+esac
+
+# Toggle checkbox
+line_num="${ref%%:*}"
+line_text="${ref#*:}"
+
+if [[ "$line_text" == *"[ ]"* ]]; then
+    new_line="${line_text/\[ \]/[x]}"
+elif [[ "$line_text" == *"[x]"* ]]; then
+    new_line="${line_text/\[x\]/[ ]}"
+else
+    exit 0
+fi
+
+sed -i "$((line_num+1))s|.*|$new_line|" "$TODO_FILE"
+

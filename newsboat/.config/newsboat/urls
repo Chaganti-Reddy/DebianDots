@@ -1,0 +1,40 @@
+NewYorkTimes
+https://rss.nytimes.com/services/xml/rss/nyt/World.xml NYT "~NYT World" News
+https://rss.nytimes.com/services/xml/rss/nyt/Business.xml NYT "~NYT Business" News
+https://rss.nytimes.com/services/xml/rss/nyt/Sports.xml NYT "~NYT Sports" News
+https://rss.nytimes.com/services/xml/rss/nyt/Technology.xml NYT "~NYT Technology" News
+https://rss.nytimes.com/services/xml/rss/nyt/Science.xml NYT "~NYT Science" News
+https://rss.nytimes.com/services/xml/rss/nyt/Space.xml NYT "~NYT Space & Comics" News
+https://rss.nytimes.com/services/xml/rss/nyt/AsiaPacific.xml NYT "~NYT Asia Pacific" News
+
+#Youtube
+#https://www.youtube.com/feeds/videos.xml?channel_id=UCngn7SVujlvskHRvRKc1cTw Youtube "~BugsWriter" Tech
+# https://www.youtube.com/feeds/videos.xml?channel_id=UCXUPKJO5MZQN11PqgIvyuvQ Youtube "~Andrej Karapathy" ML&DL
+#https://www.youtube.com/feeds/videos.xml?channel_id=UCR1I8lG-fhpVuS7s20iTSgA Youtube "~301 Diaries" Entertainment
+#https://www.youtube.com/feeds/videos.xml?channel_id=UCtMsK12pzp5tO4NX1H8E8HQ Youtube "~Sanjeev Sriram" Masters
+#https://www.youtube.com/feeds/videos.xml?channel_id=UCVls1GmFKf6WlTraIb_IaJg Youtube "~DistroTube" Linux
+#https://www.youtube.com/feeds/videos.xml?channel_id=UCqyrm14zcbZw6pdQeHXPF8w Youtube "~DtOptions" Stock Options
+#https://www.youtube.com/feeds/videos.xml?channel_id=UCg6gPGh8HU2U01vaFCAsvmQ Youtube "~Chris Titus" Tech
+
+Reddit
+https://www.reddit.com/r/linux.rss Reddit "~Linux" Tech
+https://www.reddit.com/r/linuxmemes.rss Reddit "~Arch Linux memes" Entertainment
+https://www.reddit.com/r/unixporn.rss Reddit "~Unixporn" Tech
+https://www.reddit.com/r/commandline.rss "Commandline" Tech
+https://www.reddit.com/r/distrotube.rss "Distrotube" Tech
+https://www.reddit.com/r/emacs.rss "Emacs" Tech
+https://www.gamingonlinux.com/article_rss.php "Gaming on Linux" Gaming
+https://hackaday.com/blog/feed/ "Hackaday" Tech
+https://opensource.com/feed "Opensource" Tech
+https://linux.softpedia.com/backend.xml "Softpedia" Tech
+https://itsfoss.com/feed/ "It's FOSS" Tech
+https://www.zdnet.com/topic/linux/rss.xml "ZDNet" Tech
+https://www.phoronix.com/rss.php "Phoronix" Tech
+http://feeds.feedburner.com/d0od "OMG! Ubuntu!" Tech
+https://www.techrepublic.com/rssfeeds/topic/open-source/ "Techrepublic" Tech
+http://lxer.com/module/newswire/headlines.rss "LXER" Tech
+https://distrowatch.com/news/dwd.xml "Distrowatch" Tech
+
+https://karna-blog.netlify.app/index.xml "Karna" Blog
+═══
+

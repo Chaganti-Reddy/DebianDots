@@ -1,0 +1,144 @@
+#!/bin/bash
+
+# === SETTINGS ===
+LOG_SECTION_HEADER="# Logs"
+DATE_HEADER="## $(date +%Y-%m-%d):"
+TIME_STAMP="$(date +%H:%M:%S)"
+
+# === REQUIREMENTS CHECK ===
+command -v fzf >/dev/null 2>&1 || { echo >&2 "❌ fzf is not installed. Install it first."; exit 1; }
+command -v jq >/dev/null 2>&1 || { echo >&2 "❌ jq is not installed. Install it first."; exit 1; }
+
+# === FIND TARGET FILE ===
+mapfile -t log_files < <(find . -maxdepth 1 -type f \( -iname "readme.md" -o -iname "*.log" \))
+
+if [ ${#log_files[@]} -eq 0 ]; then
+  file_type=$(printf "README.md\ntimeline.log" | fzf --prompt="📄 Select file to create: ")
+  [ -z "$file_type" ] && echo "❌ Cancelled." && exit 1
+  touch "$file_type"
+  selected_file="$file_type"
+else
+  if [ ${#log_files[@]} -gt 1 ]; then
+    selected_file=$(printf '%s\n' "${log_files[@]}" | fzf --prompt="📂 Select file to log into: ")
+    [ -z "$selected_file" ] && echo "❌ Cancelled." && exit 1
+  else
+    selected_file="${log_files[0]}"
+  fi
+fi
+
+# === GET LOG ENTRY ===
+read -p "📝 Enter your log message: " log_entry
+[ -z "$log_entry" ] && echo "❌ Empty log. Exiting." && exit 1
+
+# === AUTO-TAGGING LOGIC ===
+lower_msg=$(echo "$log_entry" | tr '[:upper:]' '[:lower:]')
+if [[ "$lower_msg" =~ (fix|bug|error) ]]; then
+  auto_tag="@fix"
+elif [[ "$lower_msg" =~ (add|implement) ]]; then
+  auto_tag="@feature"
+elif [[ "$lower_msg" =~ (note|observe|found) ]]; then
+  auto_tag="@note"
+elif [[ "$lower_msg" =~ (clean|rewrite|move) ]]; then
+  auto_tag="@refactor"
+elif [[ "$lower_msg" =~ (later|todo|next) ]]; then
+  auto_tag="@todo"
+elif [[ "$lower_msg" =~ (test|experiment) ]]; then
+  auto_tag="@experiment"
+elif [[ "$lower_msg" =~ (fast|speed|perf|optimi[sz]e) ]]; then
+  auto_tag="@optimize"
+else
+  auto_tag="@note"
+fi
+
+# === MULTI-TAG SELECTION WITH FZF ===
+echo -e "\n🤖 Suggested tag based on your log: $auto_tag"
+echo -e "\n🎯 Select up to 5 tags (Tab to select, Enter to confirm):"
+all_tags=(
+  "@fix        – Bug fix / correction"
+  "@feature    – New addition or improvement"
+  "@note       – Observation or insight"
+  "@refactor   – Code restructure"
+  "@todo       – Future work or idea"
+  "@experiment – Experimental change"
+  "@optimize   – Performance tweak"
+  "Custom"
+)
+
+selected=$(printf '%s\n' "${all_tags[@]}" | \
+  fzf --multi --prompt="Select tags: " --header="Max 5 tags" --height=40% --ansi --marker='✔ ' --bind "enter:accept")
+selected_tags=$(echo "$selected" | awk '{print $1}')
+
+# Handle Custom tag input
+if echo "$selected_tags" | grep -q "Custom"; then
+  read -p "Enter your custom tag (with @): " custom_tag
+  [[ "$custom_tag" != @* ]] && custom_tag="@$custom_tag"
+  selected_tags=$(echo "$selected_tags" | grep -v "Custom")
+  selected_tags="$selected_tags"$'\n'"$custom_tag"
+fi
+
+# Limit to max 5 tags
+tag_list=$(echo "$selected_tags" | head -n 5 | paste -sd, -)
+
+# === FORMAT FINAL LOG ENTRY ===
+if [[ "$selected_file" == *.log ]]; then
+  # JSON format for .log
+  formatted_line=$(jq -n \
+    --arg ts "$(date '+%Y-%m-%d %H:%M:%S')" \
+    --arg msg "$log_entry" \
+    --argjson tags "$(echo "$tag_list" | sed 's/,/","/g; s/^/["/; s/$/"]/')" \
+    '{timestamp: $ts, tags: $tags, message: $msg}')
+else
+  # Markdown format for README.md
+  formatted_line="- $TIME_STAMP : [$tag_list] $log_entry"
+fi
+
+# === PREVIEW AND CONFIRMATION ===
+echo -e "\n🔍 Preview:"
+echo -e "$formatted_line"
+read -p "✅ Append this log? (Y/n): " confirm
+[[ "$confirm" =~ ^[Nn] ]] && echo "❌ Cancelled." && exit 0
+
+# === APPEND TO FILE ===
+if [[ "$selected_file" == *.log ]]; then
+  echo "$formatted_line" >> "$selected_file"
+else
+  # === Ensure # Logs section (with one clean blank line before it) ===
+  if ! grep -q "^$LOG_SECTION_HEADER" "$selected_file"; then
+    last_line=$(tail -n 1 "$selected_file")
+    [[ -n "$last_line" ]] && echo "" >> "$selected_file"
+    echo "$LOG_SECTION_HEADER" >> "$selected_file"
+  fi
+
+  # === Append log under correct date ===
+  temp_file=$(mktemp)
+  awk -v date_header="$DATE_HEADER" -v entry="$formatted_line" '
+  BEGIN { inserted = 0 }
+  /^# Logs$/ {
+    print
+    next
+  }
+  {
+    if ($0 == date_header) {
+      print
+      print entry
+      inserted = 1
+      next
+    }
+    if (!inserted && /^## /) {
+      print date_header
+      print entry
+      inserted = 1
+    }
+    print
+  }
+  END {
+    if (!inserted) {
+      print date_header
+      print entry
+    }
+  }
+  ' "$selected_file" > "$temp_file" && mv "$temp_file" "$selected_file"
+fi
+
+echo "✅ Log appended to $selected_file"
+

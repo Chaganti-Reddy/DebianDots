@@ -1,0 +1,49 @@
+#!/bin/bash
+
+# Function to check if ghostscript is installed
+check_ghostscript() {
+  if ! command -v gs &> /dev/null
+  then
+    echo "Ghostscript could not be found. Please install it using 'sudo apt install ghostscript' or your package manager."
+    exit 1
+  fi
+}
+
+# Function to compress PDF
+compress_pdf() {
+  input_pdf=$1
+  output_pdf="${input_pdf%.pdf}_compressed.pdf"
+  
+  # Get original file size
+  original_size=$(stat --format=%s "$input_pdf")
+  original_size_kb=$((original_size / 1024))
+
+  echo "Original size: $original_size_kb KB"
+
+  # Compress the PDF using ghostscript
+  gs -sDEVICE=pdfwrite -dCompatibilityLevel=1.4 -dPDFSETTINGS=/screen -dNOPAUSE -dQUIET -dBATCH -sOutputFile="$output_pdf" "$input_pdf"
+
+  # Get compressed file size
+  compressed_size=$(stat --format=%s "$output_pdf")
+  compressed_size_kb=$((compressed_size / 1024))
+
+  # Calculate size reduction percentage
+  reduction_percent=$((100 - (compressed_size_kb * 100 / original_size_kb)))
+
+  echo "Compressed size: $compressed_size_kb KB"
+  echo "Size reduced by: $reduction_percent%"
+
+  echo "Compressed PDF saved as: $output_pdf"
+}
+
+# Main script execution
+if [ $# -ne 1 ]; then
+  echo "Usage: $0 input.pdf"
+  exit 1
+fi
+
+# Check if Ghostscript is installed
+check_ghostscript
+
+# Compress the PDF
+compress_pdf "$1"

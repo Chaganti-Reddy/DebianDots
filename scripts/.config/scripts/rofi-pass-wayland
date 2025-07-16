@@ -1,0 +1,118 @@
+#!/usr/bin/env bash
+set -euo pipefail
+shopt -s nullglob globstar
+
+# Set your password store directory (default: ~/.password-store)
+prefix="${PASSWORD_STORE_DIR:-"$HOME/.password-store"}"
+
+# Build an array of all pass entries (all *.gpg files under the store)
+password_files=( "$prefix"/**/*.gpg )
+# Remove the store prefix and the .gpg extension so entries match what pass expects
+for i in "${!password_files[@]}"; do
+  password_files[$i]="${password_files[$i]#${prefix}/}"
+  password_files[$i]="${password_files[$i]%.gpg}"
+done
+
+# Use rofi to select an entry
+selected_entry=$(printf '%s\n' "${password_files[@]}" | rofi -i -dmenu -p "pass:")
+[[ -z "$selected_entry" ]] && exit 0
+
+# Retrieve the full content of the selected pass entry
+entry_content=$(pass show "$selected_entry")
+# Assume the first line is the password
+password=$(echo "$entry_content" | head -n1)
+# Try to extract the login from a line beginning with "login:" or "user:"
+login=$(echo "$entry_content" | grep -i '^login:' | head -n1 | cut -d':' -f2- | sed 's/^[[:space:]]*//')
+if [[ -z "$login" ]]; then
+  login=$(echo "$entry_content" | grep -i '^user:' | head -n1 | cut -d':' -f2- | sed 's/^[[:space:]]*//')
+fi
+
+# Present the list of actions via rofi
+action=$(printf '%s\n' "autotype" "type login" "type pass" "copy login" "copy pass" | rofi -dmenu -p "action:")
+[[ -z "$action" ]] && exit 0
+
+# Optional notification function (requires notify-send)
+notify() {
+  command -v notify-send &>/dev/null && notify-send "rofi-pass" "$1"
+}
+
+case "$action" in
+  "autotype")
+    # Check for a custom autotype template in the entry.
+    # This looks for a line starting with "autotype:" and returns its value.
+    custom_autotype=$(echo "$entry_content" | sed -n 's/^autotype:[[:space:]]*//p')
+    if [[ -n "$custom_autotype" ]]; then
+      # Process the custom autotype template word by word.
+      # Recognized tokens:
+      #   - ":tab"    => sends a Tab key via wtype -P TAB
+      #   - "pass"    => types the password (first line of the entry)
+      #   - "login" or "user" => types the login (or, if not found, the last segment of the entry name)
+      for word in $custom_autotype; do
+        if [[ "$word" == ":tab" ]]; then
+          wtype -P TAB
+          sleep 0.2
+        elif [[ "$word" == "pass" ]]; then
+          wtype "$password"
+          sleep 0.2
+        elif [[ "$word" == "login" || "$word" == "user" ]]; then
+          if [[ -n "$login" ]]; then
+            wtype "$login"
+          else
+            # Fallback: use the last segment of the entry name
+            fallback="${selected_entry##*/}"
+            wtype "$fallback"
+          fi
+          sleep 0.2
+        else
+          # For any other token, type it literally.
+          wtype "$word"
+          sleep 0.2
+        fi
+      done
+      notify "Auto-typed using custom template for: $selected_entry"
+    else
+      # No custom autotype defined; use default behavior:
+      # Type login (if available), then Tab, then password.
+      if [[ -n "$login" ]]; then
+        wtype "$login"
+        sleep 0.2
+        wtype -P TAB
+        sleep 0.2
+        wtype "$password"
+        notify "Auto-typed login & password for: $selected_entry (default autotype)"
+      else
+        wtype "$password"
+        notify "Auto-typed password for: $selected_entry (default autotype, no login)"
+      fi
+    fi
+    ;;
+  "type login")
+    if [[ -n "$login" ]]; then
+      wtype "$login"
+      notify "Typed login for: $selected_entry"
+    else
+      notify "No login field found for: $selected_entry"
+    fi
+    ;;
+  "type pass")
+    wtype "$password"
+    notify "Typed password for: $selected_entry"
+    ;;
+  "copy login")
+    if [[ -n "$login" ]]; then
+      echo -n "$login" | wl-copy
+      notify "Copied login for: $selected_entry"
+    else
+      notify "No login field found for: $selected_entry"
+    fi
+    ;;
+  "copy pass")
+    echo -n "$password" | wl-copy
+    notify "Copied password for: $selected_entry"
+    ;;
+  *)
+    notify "Unknown action: $action"
+    ;;
+esac
+
+exit 0

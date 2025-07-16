@@ -1,0 +1,123 @@
+#!/bin/bash
+
+# Configuration
+PICTURES_DIR=~/Pictures/pix
+MONITOR="eDP-1" 
+
+# Function to start Hyprpaper if not running
+start_hyprpaper() {
+  if ! pgrep -x "hyprpaper" >/dev/null; then
+    hyprpaper &
+    sleep 0.5 # Give it time to start
+    # dunstify -u low "Hyprpaper is not running. Starting it..."
+  fi
+}
+
+# Function to select a random wallpaper from all subdirectories inside the Pictures directory
+get_random_wallpaper() {
+  # Find all .jpg and .png files inside the Pictures directory and its subdirectories
+  local wallpaper=$(find "$PICTURES_DIR" -type f \( -iname "*.jpg" -o -iname "*.png" \) | shuf -n 1)
+  echo "$wallpaper"
+}
+
+# Function to set wallpaper
+set_wallpaper() {
+  local wallpaper="$1"
+
+  # Ensure the file exists
+  if [[ ! -f "$wallpaper" ]]; then
+    dunstify -u low "Error: File not found →> $wallpaper"
+    exit 1
+  fi
+
+  # Preload and set the wallpaper
+  hyprctl hyprpaper preload "$wallpaper"
+  sleep 0.5                                       # Give time for preload
+  hyprctl hyprpaper wallpaper "$MONITOR, $wallpaper"
+  #dunstify -u low -i "/usr/share/icons/dunst/picture.png" "Wallpaper set: $wallpaper"
+}
+
+# Function to apply color scheme (theming)
+apply_theme() {
+  local wallpaper="$1"
+
+  echo "Applying theme based on $wallpaper..."
+
+  # Ensure wallpaper exists before applying
+  if [[ ! -f "$wallpaper" ]]; then
+    dunstify -u low "Error: Wallpaper file not found →> $wallpaper"
+    exit 1
+  fi
+
+  # Apply color scheme using pywal
+  wal -i "$wallpaper" 
+
+  # Restart dunst to apply theme-related changes
+  pkill dunst
+  dunst &
+
+  dunstify -u low -i "/usr/share/icons/dunst/themes.png" "Theme applied based on $wallpaper"
+}
+
+# Function to reload Waybar configuration
+reload_waybar() {
+  # Check if colors-waybar.css exists and create a symlink if not
+  if [[ ! -f ~/.config/waybar/colors-waybar.css ]]; then
+    ln -s ~/.cache/wal/colors-waybar.css ~/.config/waybar/colors-waybar.css
+    dunstify -u low -i "/usr/share/icons/dunst/themes.png" "Created symlink for Waybar colors."
+  fi
+
+  # Reload Waybar to apply the new theme
+  if pgrep -x "waybar" >/dev/null; then
+    # Waybar already running, reload it
+    pkill waybar
+    waybar &
+    #dunstify -u low -i "/usr/share/icons/dunst/palette.png" "Waybar reloaded with new theme"
+  else
+    # If Waybar isn't running, start it (or restart it manually based on your system's setup)
+    waybar &
+    #dunstify -u low -i "/usr/share/icons/dunst/palette.png" "Waybar started with new theme"
+  fi
+}
+
+reload_hypr() {
+  WAL_COLORS=~/.cache/wal/colors.json
+
+  # Extract the colors using jq
+  active_border_start=$(jq -r '.colors.color3' "$WAL_COLORS")  # color1
+  active_border_end=$(jq -r '.colors.color14' "$WAL_COLORS")    # color2
+  inactive_border=$(jq -r '.colors.color12' "$WAL_COLORS")       # color4
+
+  # Convert hex to rgba (keep full opacity, change if needed)
+  active_border_start_rgba=$(echo $active_border_start | sed 's/#\(..\)\(..\)\(..\)/rgba(\1\2\3ff)/')
+  active_border_end_rgba=$(echo $active_border_end | sed 's/#\(..\)\(..\)\(..\)/rgba(\1\2\3ff)/')
+  inactive_border_rgba=$(echo $inactive_border | sed 's/#\(..\)\(..\)\(..\)/rgba(\1\2\3ff)/')
+
+  # Apply these colors to the Hyprland config
+  sed -i "s|col.active_border = .*|col.active_border = $active_border_start_rgba $active_border_end_rgba 45deg|" ~/.config/hypr/custom/general.conf
+  sed -i "s|col.inactive_border = .*|col.inactive_border = $inactive_border_rgba|" ~/.config/hypr/custom/general.conf
+
+  # Reload Hyprland to apply the changes
+  hyprctl reload
+  # dunstify -u low -i "/usr/share/icons/dunst/palette.png" "Hyprland reloaded with new theme"
+}
+
+# Main logic (execute all functions one by one)
+main() {
+  start_hyprpaper # Start Hyprpaper if not already running
+
+  random_wallpaper=$(get_random_wallpaper) # Get a random wallpaper from all subdirectories in Pictures
+
+  if [[ -z "$random_wallpaper" ]]; then
+    dunstify "No wallpapers found!"
+    exit 1
+  fi
+
+  set_wallpaper "$random_wallpaper" # Set the random wallpaper
+  apply_theme "$random_wallpaper"   # Apply the theme based on the wallpaper
+  reload_waybar                     # Reload Waybar to apply the new theme
+  reload_hypr
+}
+
+# Execute main function
+main

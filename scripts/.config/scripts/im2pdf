@@ -1,0 +1,33 @@
+#!/bin/bash
+
+# Check if at least one argument is provided
+if [ "$#" -eq 0 ]; then
+    echo "Usage: $0 <image1> <image2> ..."
+    exit 1
+fi
+
+# Extract the first input filename (without extension) for output PDF
+first_image="${1%.*}"
+output_pdf="$first_image.pdf"
+
+# Collect all input images
+input_images=("$@")
+
+# Check if ImageMagick is installed
+if ! command -v magick &> /dev/null; then
+    echo "Error: ImageMagick is not installed. Install it using:"
+    echo "   sudo apt install imagemagick (Debian/Ubuntu) or"
+    echo "   sudo pacman -S imagemagick (Arch)"
+    exit 1
+fi
+
+# Convert images to PDF using ImageMagick with improved quality settings.
+# The '-quality 100' option helps preserve the image quality.
+magick -quality 100 "${input_images[@]}" "$output_pdf"
+
+if [ $? -eq 0 ]; then
+    echo "Conversion successful: $output_pdf created."
+else
+    echo "Error: Failed to create PDF."
+    exit 1
+fi

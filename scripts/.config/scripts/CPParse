@@ -1,0 +1,339 @@
+#!/bin/bash
+# parse
+# A self-contained script for Competitive Companion integration.
+#
+# Modes:
+# 1) Server Mode (default):
+#    - Starts a one-shot Flask server on port 12345.
+#    - When the CC extension sends its JSON payload:
+#         • If the payload is a list (contest home page), it extracts the contest identifier
+#           (e.g. "816" or "abc367") and creates a contest folder with that name.
+#         • For each problem, it creates a subfolder (named by its letter, e.g. A, B, …).
+#         • For a single problem, it creates the contest folder (if available) and a subfolder.
+#         • In each subfolder an info.txt and sample test case files are written,
+#           and a stub solution (solution.py) is created if needed.
+#    - Then the server shuts down and prints the contest folder and available problem subfolders.
+#
+# 2) Run Mode (lowercase "run"):
+#    - Usage: ./parse run <problem_letter>
+#    - Runs tests for that problem folder (which must exist in the current directory).
+#
+# 3) Global Run Mode (capital "Run"):
+#    - Iterates over all subdirectories in the current directory and runs tests for each.
+#
+# 4) Edit Mode:
+#    - Usage: ./parse edit <problem_letter>
+#    - Opens nvim on the solution file in that problem folder (relative to current directory).
+#
+# 5) Exit Mode:
+#    - Usage: ./parse exit
+#    - Exits.
+#
+
+# --- Edit Mode ---
+if [ "$1" == "edit" ]; then
+    if [ -z "$2" ]; then
+        echo "Usage: $0 edit <problem_letter>"
+        exit 1
+    fi
+    letter=$(echo "$2" | tr '[:lower:]' '[:upper:]')
+    folder="$letter"
+    if [ ! -f "$folder/solution.py" ]; then
+        echo "Solution file not found in folder '$folder'."
+        exit 1
+    fi
+    nvim "$folder/solution.py"
+    exit 0
+fi
+
+# --- Run Mode (single problem) ---
+if [ "$1" == "run" ]; then
+    if [ -z "$2" ]; then
+        echo "Usage: $0 run <problem_letter>"
+        exit 1
+    fi
+    folder=$(echo "$2" | tr '[:lower:]' '[:upper:]')
+    if [ ! -d "$folder" ]; then
+        echo "Folder '$folder' not found in the current directory."
+        exit 1
+    fi
+    python3 - "$folder" <<'EOF_PYTHON'
+import os, sys, subprocess
+folder = sys.argv[1]
+if not os.path.isdir(folder):
+    print("Folder not found.")
+    sys.exit(1)
+def run_tests(folder):
+    solution_file = os.path.join(folder, "solution.py")
+    if not os.path.exists(solution_file):
+        print(f"No solution file found in {folder}.")
+        return
+    i = 1
+    results = []
+    while True:
+        inp_file = os.path.join(folder, f"sample_input_{i}.txt")
+        out_file = os.path.join(folder, f"sample_output_{i}.txt")
+        if not os.path.exists(inp_file):
+            break
+        try:
+            proc = subprocess.run(["python3", solution_file],
+                                    stdin=open(inp_file, "r"),
+                                    stdout=subprocess.PIPE,
+                                    stderr=subprocess.PIPE,
+                                    text=True, timeout=5)
+        except subprocess.TimeoutExpired:
+            results.append(f"Test case {i}: Timeout")
+            i += 1
+            continue
+        actual = proc.stdout.strip()
+        expected = ""
+        if os.path.exists(out_file):
+            with open(out_file, "r") as f:
+                expected = f.read().strip()
+        if actual == expected:
+            results.append(f"Test case {i}: Passed")
+        else:
+            results.append(f"Test case {i}: Failed\nExpected: {expected}\nActual: {actual}")
+        i += 1
+    if results:
+        print("\n".join(results))
+    else:
+        print("No sample test cases found.")
+run_tests(folder)
+EOF_PYTHON
+    exit 0
+fi
+
+# --- Global Run Mode (capital "Run") ---
+if [ "$1" == "Run" ]; then
+    python3 - <<'EOF_PYTHON'
+import os, subprocess
+
+def run_tests(folder):
+    solution_file = os.path.join(folder, "solution.py")
+    if not os.path.exists(solution_file):
+        return f"[{folder}] No solution file found."
+    i = 1
+    results = []
+    while True:
+        inp_file = os.path.join(folder, f"sample_input_{i}.txt")
+        out_file = os.path.join(folder, f"sample_output_{i}.txt")
+        if not os.path.exists(inp_file):
+            break
+        try:
+            proc = subprocess.run(["python3", solution_file],
+                                    stdin=open(inp_file, "r"),
+                                    stdout=subprocess.PIPE,
+                                    stderr=subprocess.PIPE,
+                                    text=True, timeout=5)
+        except subprocess.TimeoutExpired:
+            results.append(f"Test case {i}: Timeout")
+            i += 1
+            continue
+        actual = proc.stdout.strip()
+        expected = ""
+        if os.path.exists(out_file):
+            with open(out_file, "r") as f:
+                expected = f.read().strip()
+        if actual == expected:
+            results.append(f"Test case {i}: Passed")
+        else:
+            results.append(f"Test case {i}: Failed\nExpected: {expected}\nActual: {actual}")
+        i += 1
+    return "\n".join(results) if results else "No sample test cases found."
+
+problem_folders = sorted([d for d in os.listdir('.') if os.path.isdir(d)])
+for folder in problem_folders:
+    print(f"Running tests for problem folder: {folder}")
+    result = run_tests(folder)
+    print(result)
+    print("="*40)
+EOF_PYTHON
+    exit 0
+fi
+
+# --- Exit Mode ---
+if [ "$1" == "exit" ]; then
+    exit 0
+fi
+
+# --- Default/Server Mode ---
+echo "Starting Competitive Companion server on port 12345..."
+echo "Waiting for payload..."
+
+python3 - <<'EOF_PYTHON'
+from flask import Flask, request, jsonify
+import os, re, json, subprocess, sys
+
+app = Flask(__name__)
+
+def sanitize_filename(name):
+    return re.sub(r'[^a-zA-Z0-9_-]', '', name).strip() or "Contest"
+
+def extract_letter(name):
+    m = re.match(r'^\s*([A-Za-z])[\.\s]', name)
+    if m:
+        return m.group(1).upper()
+    for ch in name:
+        if ch.isalnum():
+            return ch.upper()
+    return "X"
+
+def extract_contest_identifier(url):
+    import re
+    m = re.search(r'contest/(\d+)', url)
+    if m:
+        return m.group(1)
+    m = re.search(r'contests/([^/]+)', url)
+    if m:
+        return m.group(1)
+    return None
+
+def create_stub_solution(folder):
+    solution_file = os.path.join(folder, "solution.py")
+    if not os.path.exists(solution_file):
+        stub = '''#!/usr/bin/env python3
+"""
+Write your solution below.
+"""
+
+def main():
+    import sys
+    data = sys.stdin.read()
+    print(data.strip())
+
+if __name__ == '__main__':
+    main()
+'''
+        with open(solution_file, "w") as f:
+            f.write(stub)
+        os.chmod(solution_file, 0o755)
+        print(f"Stub solution created in {folder}")
+    else:
+        print(f"Solution file already exists in {folder}")
+    return solution_file
+
+def run_tests(folder):
+    solution_file = os.path.join(folder, "solution.py")
+    if not os.path.exists(solution_file):
+        return "No solution file found in " + folder
+    results = []
+    i = 1
+    while True:
+        inp_file = os.path.join(folder, f"sample_input_{i}.txt")
+        out_file = os.path.join(folder, f"sample_output_{i}.txt")
+        if not os.path.exists(inp_file):
+            break
+        try:
+            proc = subprocess.run(["python3", solution_file],
+                                    stdin=open(inp_file, "r"),
+                                    stdout=subprocess.PIPE,
+                                    stderr=subprocess.PIPE,
+                                    text=True, timeout=5)
+        except subprocess.TimeoutExpired:
+            results.append(f"Test case {i}: Timeout")
+            i += 1
+            continue
+        actual = proc.stdout.strip()
+        expected = ""
+        if os.path.exists(out_file):
+            with open(out_file, "r") as f:
+                expected = f.read().strip()
+        if actual == expected:
+            results.append(f"Test case {i}: Passed")
+        else:
+            results.append(f"Test case {i}: Failed\nExpected: {expected}\nActual: {actual}")
+        i += 1
+    return "\n".join(results) if results else "No sample test cases found."
+
+def process_payload(data):
+    if isinstance(data, list):
+        first = data[0]
+        url = first.get("url", "")
+        contest_identifier = extract_contest_identifier(url)
+        if contest_identifier:
+            contest_folder = sanitize_filename(contest_identifier)
+        else:
+            contest_folder = "Contest"
+        os.makedirs(contest_folder, exist_ok=True)
+        for problem in data:
+            name = problem.get("name", "Problem")
+            letter = extract_letter(name)
+            folder = os.path.join(contest_folder, letter)
+            os.makedirs(folder, exist_ok=True)
+            info_path = os.path.join(folder, "info.txt")
+            with open(info_path, "w") as f:
+                f.write(f"Name: {name}\nContest: {contest_identifier if contest_identifier else 'N/A'}\nURL: {problem.get('url','')}\n")
+            tests = problem.get("tests", [])
+            for i, test in enumerate(tests, start=1):
+                inp = test.get("input", "")
+                out = test.get("output", "")
+                with open(os.path.join(folder, f"sample_input_{i}.txt"), "w") as f_in:
+                    f_in.write(inp)
+                with open(os.path.join(folder, f"sample_output_{i}.txt"), "w") as f_out:
+                    f_out.write(out)
+                print(f"Saved test case {i} in folder {folder}")
+            create_stub_solution(folder)
+        return contest_folder
+    else:
+        name = data.get("name", "Problem")
+        url = data.get("url", "")
+        tests = data.get("tests", [])
+        letter = extract_letter(name)
+        contest_identifier = extract_contest_identifier(url)
+        if contest_identifier:
+            contest_folder = sanitize_filename(contest_identifier)
+            folder = os.path.join(contest_folder, letter)
+            os.makedirs(contest_folder, exist_ok=True)
+        else:
+            folder = letter
+        os.makedirs(folder, exist_ok=True)
+        info_path = os.path.join(folder, "info.txt")
+        with open(info_path, "w") as f:
+            f.write(f"Name: {name}\nContest: {contest_identifier if contest_identifier else 'N/A'}\nURL: {url}\n")
+        for i, test in enumerate(tests, start=1):
+            inp = test.get("input", "")
+            out = test.get("output", "")
+            with open(os.path.join(folder, f"sample_input_{i}.txt"), "w") as f_in:
+                f_in.write(inp)
+            with open(os.path.join(folder, f"sample_output_{i}.txt"), "w") as f_out:
+                f_out.write(out)
+            print(f"Saved test case {i} in folder {folder}")
+        create_stub_solution(folder)
+        return folder
+
+def shutdown_server():
+    func = request.environ.get('werkzeug.server.shutdown')
+    if func is None:
+        import os
+        os._exit(0)
+    func()
+
+@app.route('/', methods=['POST', 'OPTIONS', 'GET'])
+def handler():
+    if request.method == 'OPTIONS':
+        return '', 200
+    if request.method == 'POST':
+        data = request.get_json(force=True, silent=True)
+        if not data:
+            return jsonify({"error": "No JSON received"}), 400
+        print("Received payload:", data)
+        folder = process_payload(data)
+        test_results = run_tests(folder)
+        shutdown_server()
+        return jsonify({
+            "message": "Problem(s) processed.",
+            "folder": folder,
+            "test_results": test_results
+        }), 200
+    return "Competitive Companion Server is running. Send POST requests."
+
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=12345)
+EOF_PYTHON
+
+echo "Server stopped."
+echo "Latest contest folder created (in current directory):"
+find . -maxdepth 1 -mindepth 1 -type d | sed 's|^\./||'
+echo "To run tests for a specific problem, use: ./parse run <problem letter> (e.g., ./parse run A)"
+echo "To edit a solution, use: ./parse edit <problem letter> (e.g., ./parse edit A)"

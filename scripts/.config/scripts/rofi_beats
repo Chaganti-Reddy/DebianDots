@@ -1,0 +1,67 @@
+#!/bin/sh
+
+# Add more args here according to preference
+ARGS="--volume=60"
+
+notification() {
+	# Send a notification with a custom icon and message
+	notify-send "$1" "$2" --icon=/usr/share/icons/dunst/music.png
+}
+
+menu() {
+	printf "1. Lofi Girl\n"
+	printf "2. Chillhop\n"
+	printf "3. Box Lofi\n"
+	printf "4. The Bootleg Boy\n"
+	printf "5. Radio Spinner\n"
+	printf "6. SmoothChill"
+}
+
+main() {
+	choice=$(menu | rofi -dmenu | cut -d. -f1)
+
+	case $choice in
+		1)
+			notification "Playing now:" "Lofi Girl ☕️🎶"
+			URL="https://play.streamafrica.net/lofiradio"
+			;;
+		2)
+			notification "Playing now:" "Chillhop ☕️🎶"
+			URL="http://stream.zeno.fm/fyn8eh3h5f8uv"
+			;;
+		3)
+			notification "Playing now:" "Box Lofi ☕️🎶"
+			URL="http://stream.zeno.fm/f3wvbbqmdg8uv"
+			;;
+		4)
+			notification "Playing now:" "The Bootleg Boy ☕️🎶"
+			URL="http://stream.zeno.fm/0r0xa792kwzuv"
+			;;
+		5)
+			notification "Playing now:" "Radio Spinner ☕️🎶"
+			URL="https://live.radiospinner.com/lofi-hip-hop-64"
+			;;
+		6)
+			notification "Playing now:" "SmoothChill ☕️🎶"
+			URL="https://media-ssl.musicradio.com/SmoothChill"
+			;;
+		*)
+			exit 0
+			;;
+	esac
+
+	# Launch cava in new st terminal
+	kitty -T cava-f -e cava &
+
+	# Launch mpv radio stream
+	mpv $ARGS --title="radio-mpv" "$URL"
+}
+
+# If already playing, stop and notify
+if pgrep -f "mpv.*radio-mpv" >/dev/null; then
+	pkill -f radio-mpv
+	notification "Stopped Playing" "Your radio has been turned off 📴"
+else
+	main
+fi
+

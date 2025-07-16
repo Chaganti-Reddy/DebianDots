@@ -1,0 +1,72 @@
+#!/usr/bin/env bash
+#
+# Script name: dm-confedit
+# Description: Choose from a list of configuration files to edit.
+# Dependencies: dmenu, emacsclient
+
+# Set with the flags "-e", "-u","-o pipefail" cause the script to fail
+# if certain things happen, which is a good thing.  Otherwise, we can
+# get hidden bugs that are hard to discover.
+set -euo pipefail
+
+DMEDITOR="kitty -e nvim"
+
+declare -A confedit_list
+# confedit_list[alacritty]="$HOME/dotfiles/alacritty/.config/alacritty/alacritty.yml"
+confedit_list[dotinstall]="$HOME/dotfiles/install.sh"
+confedit_list[bash]="$HOME/dotfiles/bashrc/.bashrc"
+confedit_list[emacs]="$HOME/.emacs.d/init.el"
+# confedit_list[doom emacs]="$HOME/dotfiles/doom-emacs/.config/doom/config.org"
+confedit_list[dunstrc]="$HOME/dotfiles/dunst/.config/dunst/dunstrc"
+# confedit_list[dwm]="$HOME/dotfiles/suckless/.config/dwm/config.def.h"
+# confedit_list[dwm startup]="$HOME/dotfiles/DWMScripts/.dwm/autostart.sh"
+# confedit_list[fish]="$HOME/dotfiles/fish/.config/fish/config.fish"
+confedit_list[Hyprland]="$HOME/dotfiles/hyprland/.config/hypr/hyprland.conf"
+confedit_list[hyprlock]="$HOME/dotfiles/hyprland/.config/hypr/hyprlock.conf"
+confedit_list[hypridle]="$HOME/dotfiles/hyprland/.config/hypr/hypridle.conf"
+confedit_list[Script]="$HOME/dotfiles/kitty/.config/scripts/script"
+confedit_list[mpd]="$HOME/dotfiles/mpd/.mpd/mpd.conf"
+confedit_list[mpv]="$HOME/.config/mpv/mpv.conf"
+confedit_list[ncmpcpp]="$HOME/dotfiles/ncmpcpp/.ncmpcpp/config"
+confedit_list[neovim]="$HOME/dotfiles/nvim/.config/nvim/init.lua"
+confedit_list[newsboat urls]="$HOME/dotfiles/newsboat/.config/newsboat/urls"
+#confedit_list[picom]="$HOME/dotfiles/picom/.config/picom/picom.conf"
+confedit_list[qtile]="$HOME/dotfiles/qtile/.config/qtile/config.py"
+confedit_list[qtile startup]="$HOME/dotfiles/qtile/.config/qtile/autostart.sh"
+# confedit_list[ranger]="$HOME/dotfiles/ranger_karna/.config/ranger/rc.conf"
+#confedit_list[ssh]="$HOME/.ssh/config"
+# confedit_list[st]="$HOME/dotfiles/suckless/.config/st/config.h"
+# confedit_list[slstatus]="$HOME/dotfiles/suckless/.config/slstatus/config.def.h"
+# confedit_list[xinitrc]="$HOME/dotfiles/Profile/.xinitrc"
+# confedit_list[xresources]="$HOME/dotfiles/Profile/.Xresources"
+confedit_list[yazi]="$HOME/dotfiles/yazi/.config/yazi/yazi.toml"
+confedit_list[ytfzf]="$HOME/dotfiles/ytfzf/.config/ytfzf/conf.sh"
+confedit_list[ytfzf subs]="$HOME/dotfiles/ytfzf/.config/ytfzf/subscriptions"
+confedit_list[zathura]="$HOME/dotfiles/zathura/.config/zathura/zathurarc"
+confedit_list[zsh]="$HOME/dotfiles/zsh/.zshrc"
+
+main() {
+  # Clean options array making sure that the files exist
+  declare -A _clean_list
+  # As this is loaded from other file it is technically not defined
+  # shellcheck disable=SC2154
+  for i in "${!confedit_list[@]}"; do
+    [[ -f ${confedit_list["${i}"]} ]] && _clean_list["${i}"]=${confedit_list["${i}"]}
+  done
+
+  # Piping the above array (cleaned) into dmenu.
+  # We use "printf '%s\n'" to format the array one item to a line.
+  choice=$(printf '%s\n' "${!_clean_list[@]}" | sort | rofi -dmenu -theme ~/.config/rofi/dt-center.rasi -i -l 15 -p 'Edit config:' "$@")
+
+  # What to do when/if we choose a file to edit.
+  if [ "$choice" ]; then
+    cfg=$(printf '%s\n' "${_clean_list["${choice}"]}")
+    # shellcheck disable=SC2154
+    $DMEDITOR "$cfg"
+  # What to do if we just escape without choosing anything.
+  else
+      echo "Program terminated." && exit 0
+  fi
+}
+
+[[ "${BASH_SOURCE[0]}" == "${0}" ]] && main "$@"

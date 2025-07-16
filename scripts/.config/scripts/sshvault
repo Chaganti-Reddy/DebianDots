@@ -1,0 +1,79 @@
+#!/bin/bash
+
+VAULT_DIR="$HOME/.ssh"
+ARCHIVE_NAME="ssh_backup.zip"
+ENCRYPTED_FILE="ssh_backup.zip.cpt"
+ENCRYPTED_PATH="$HOME/$ENCRYPTED_FILE"
+
+save_ssh() {
+    if [ ! -d "$VAULT_DIR" ]; then
+        echo "❌ SSH directory not found: $VAULT_DIR"
+        exit 1
+    fi
+
+    echo "🔐 Creating encrypted backup..."
+
+    # Create zip from ~/.ssh, store it in current directory
+    zip -r -q "$ARCHIVE_NAME" -j "$VAULT_DIR"/*
+
+    # Encrypt the archive
+    ccrypt -e "$ARCHIVE_NAME"  # prompts for password
+
+    # Clean up the unencrypted zip
+    rm -f "$ARCHIVE_NAME"
+
+    echo "✅ Encrypted SSH backup saved as: $ENCRYPTED_FILE"
+}
+
+load_ssh() {
+    SCRIPT_DIR="$(pwd)/$ENCRYPTED_FILE"
+
+    if [ ! -f "$SCRIPT_DIR" ]; then
+        echo "❌ Encrypted file not found in current directory: $ENCRYPTED_FILE"
+        exit 1
+    fi
+
+    echo "🔓 Copying encrypted file to home and decrypting..."
+
+    # Copy to ~
+    cp "$SCRIPT_DIR" "$ENCRYPTED_PATH"
+
+    # Decrypt in ~
+    cd ~
+    ccrypt -d -f "$ENCRYPTED_FILE"
+
+    if [ ! -f "$ARCHIVE_NAME" ]; then
+        echo "❌ Decryption failed or cancelled. No zip file found."
+        rm -f "$ENCRYPTED_FILE"
+        exit 1
+    fi
+
+    # Extract to ~/.ssh
+    mkdir -p "$VAULT_DIR"
+    unzip -o -q "$ARCHIVE_NAME" -d "$VAULT_DIR"
+
+    # Set permissions
+    chmod 700 "$VAULT_DIR"
+    find "$VAULT_DIR" -type f -name "id_*" -exec chmod 600 {} \;
+    find "$VAULT_DIR" -type f -name "id_*.pub" -exec chmod 644 {} \;
+
+    # Clean up
+    rm -f "$ARCHIVE_NAME"
+    rm -f "$ENCRYPTED_FILE"
+
+    echo "✅ SSH keys restored to $VAULT_DIR"
+}
+
+case "$1" in
+    save)
+        save_ssh
+        ;;
+    load)
+        load_ssh
+        ;;
+    *)
+        echo "Usage: $0 {save|load}"
+        exit 1
+        ;;
+esac
+

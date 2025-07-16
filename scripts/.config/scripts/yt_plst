@@ -1,0 +1,90 @@
+#!/bin/bash
+
+get_video_ids() {
+    playlist_url=$1
+    yt-dlp --flat-playlist --get-id "$playlist_url"
+}
+
+play_youtube_playlist() {
+    playlist_url=$1
+    video_ids=($(get_video_ids "$playlist_url"))
+
+    if [ ${#video_ids[@]} -eq 0 ]; then
+        dunstify "No videos found in the playlist"
+        exit 1
+    fi
+
+    index=0
+
+    while [ $index -lt ${#video_ids[@]} ]; do
+        video_id=${video_ids[index]}
+        video_url="https://www.youtube.com/watch?v=$video_id"
+
+        # Play the video
+        mpv "$video_url"
+
+        # Prompt user for action
+        choice=$(echo -e "next\nprevious\nreplay\nvideo number\nquit" | rofi -dmenu -theme ~/.config/rofi/dt-center.rasi -i -l 10 -p "Select an action:")
+        
+        case $choice in
+            "next")
+              if [ $((index + 1)) -ge ${#video_ids[@]} ]; then
+                dunstify "No more videos in the playlist.. Playing Last Video ( $((index + 1)) / ${#video_ids[@]} )"
+              else
+                dunstify "Playing next video ( $((index + 2)) / ${#video_ids[@]} )"
+                index=$((index + 1))
+              fi
+                ;;
+            "previous")
+              if [ $((index - 1)) -lt 0 ]; then
+                dunstify "No previous videos in the playlist.. Playing First Video ( $((index + 1)) / ${#video_ids[@]} )"
+              else 
+              dunstify "Playing previous video ( $((index)) / ${#video_ids[@]} )"
+                index=$((index - 1))
+              fi
+                ;;
+            "replay")
+                dunstify "Replaying video ( $((index + 1)) / ${#video_ids[@]} )"
+                ;;
+            "video number")
+              video_number=$(echo "(/ ${#video_ids[@]})" | rofi -dmenu -theme ~/.config/rofi/dt-center.rasi -p "Enter video number:")
+                if [ $video_number -ge 1 ] && [ $video_number -le ${#video_ids[@]} ]; then
+                  dunstify "Playing video number ( $video_number / ${#video_ids[@]} )"
+                    index=$((video_number - 1))
+                else
+                    dunstify "Invalid video number."
+                    exit 0
+                fi
+                ;;
+            "quit")
+                dunstify "Exiting..."
+                exit 0
+                ;;
+        esac
+    done
+}
+
+main() {
+    choices=$(echo -e "Search\nEnter Link\nQuit" | rofi -dmenu -theme ~/.config/rofi/dt-center.rasi -i -l 10 -p "Enter your choice:")
+    
+    case $choices in
+        "Search")
+          playlist_url=$(ytfzf --rii --type=playlist -LD)
+            ;;
+        "Enter Link")
+            playlist_url=$(echo "" | rofi -dmenu -theme ~/.config/rofi/dt-center.rasi -p "Enter YouTube playlist URL:")
+            ;;
+        "Quit")
+            exit 0
+            ;;
+    esac
+
+    if [ -z "$playlist_url" ]; then
+        dunstify "No URL provided"
+        exit 1
+    fi
+    play_youtube_playlist "$playlist_url"
+}
+
+main "$@"
+

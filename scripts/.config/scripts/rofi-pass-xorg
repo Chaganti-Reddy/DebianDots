@@ -1,0 +1,126 @@
+#!/usr/bin/env bash
+set -euo pipefail
+shopt -s nullglob globstar
+
+# Set your password store directory (default: ~/.password-store)
+prefix="${PASSWORD_STORE_DIR:-"$HOME/.password-store"}"
+
+# Build an array of all pass entries (all *.gpg files under the store)
+password_files=( "$prefix"/**/*.gpg )
+# Remove the store prefix and the .gpg extension so entries match what pass expects
+for i in "${!password_files[@]}"; do
+  password_files[$i]="${password_files[$i]#${prefix}/}"
+  password_files[$i]="${password_files[$i]%.gpg}"
+done
+
+# Determine environment and set appropriate commands
+detect_environment() {
+    if [[ "${XDG_SESSION_TYPE:-}" == "wayland" || -n "${WAYLAND_DISPLAY:-}" ]]; then
+        # Wayland commands
+        type_text() { wtype "$1"; }
+        type_tab() { wtype -P TAB; }
+        copy() { echo -n "$1" | wl-copy; }
+    else
+        # X11 commands
+        type_text() { xdotool type --delay 0 "$1"; }
+        type_tab() { xdotool key Tab; }
+        copy() { echo -n "$1" | xclip -selection clipboard; }
+    fi
+}
+detect_environment
+
+# Use rofi to select an entry
+selected_entry=$(printf '%s\n' "${password_files[@]}" | rofi -i -dmenu -p "pass:")
+[[ -z "$selected_entry" ]] && exit 0
+
+# Retrieve the full content of the selected pass entry
+entry_content=$(pass show "$selected_entry")
+# Assume the first line is the password
+password=$(echo "$entry_content" | head -n1)
+# Try to extract the login from a line beginning with "login:" or "user:"
+login=$(echo "$entry_content" | grep -i '^login:' | head -n1 | cut -d':' -f2- | sed 's/^[[:space:]]*//')
+if [[ -z "$login" ]]; then
+  login=$(echo "$entry_content" | grep -i '^user:' | head -n1 | cut -d':' -f2- | sed 's/^[[:space:]]*//')
+fi
+
+# Present the list of actions via rofi
+action=$(printf '%s\n' "autotype" "type login" "type pass" "copy login" "copy pass" | rofi -dmenu -p "action:")
+[[ -z "$action" ]] && exit 0
+
+# Optional notification function (requires notify-send)
+notify() {
+  command -v notify-send &>/dev/null && notify-send "rofi-pass" "$1"
+}
+
+case "$action" in
+  "autotype")
+    # Check for a custom autotype template in the entry
+    custom_autotype=$(echo "$entry_content" | sed -n 's/^autotype:[[:space:]]*//p')
+    if [[ -n "$custom_autotype" ]]; then
+      # Process the custom autotype template
+      for word in $custom_autotype; do
+        if [[ "$word" == ":tab" ]]; then
+          type_tab
+          sleep 0.2
+        elif [[ "$word" == "pass" ]]; then
+          type_text "$password"
+          sleep 0.2
+        elif [[ "$word" == "login" || "$word" == "user" ]]; then
+          if [[ -n "$login" ]]; then
+            type_text "$login"
+          else
+            fallback="${selected_entry##*/}"
+            type_text "$fallback"
+          fi
+          sleep 0.2
+        else
+          type_text "$word"
+          sleep 0.2
+        fi
+      done
+      notify "Auto-typed using custom template for: $selected_entry"
+    else
+      # Default autotype behavior
+      if [[ -n "$login" ]]; then
+        type_text "$login"
+        sleep 0.2
+        type_tab
+        sleep 0.2
+        type_text "$password"
+        notify "Auto-typed login & password for: $selected_entry (default autotype)"
+      else
+        type_text "$password"
+        notify "Auto-typed password for: $selected_entry (default autotype, no login)"
+      fi
+    fi
+    ;;
+  "type login")
+    if [[ -n "$login" ]]; then
+      type_text "$login"
+      notify "Typed login for: $selected_entry"
+    else
+      notify "No login field found for: $selected_entry"
+    fi
+    ;;
+  "type pass")
+    type_text "$password"
+    notify "Typed password for: $selected_entry"
+    ;;
+  "copy login")
+    if [[ -n "$login" ]]; then
+      copy "$login"
+      notify "Copied login for: $selected_entry"
+    else
+      notify "No login field found for: $selected_entry"
+    fi
+    ;;
+  "copy pass")
+    copy "$password"
+    notify "Copied password for: $selected_entry"
+    ;;
+  *)
+    notify "Unknown action: $action"
+    ;;
+esac
+
+exit 0

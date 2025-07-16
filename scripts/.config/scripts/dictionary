@@ -1,0 +1,82 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+HISTORY_FILE="$HOME/.word_search_history"
+
+# Ensure the history file exists
+touch "$HISTORY_FILE"
+
+# Function to add a word to history
+add_to_history() {
+  local word="$1"
+  if ! grep -Fxq "$word" "$HISTORY_FILE"; then
+    echo "$word" >> "$HISTORY_FILE"
+  fi
+}
+
+# Function to display the search menu
+search_word() {
+  local WORD
+  if [ -s "$HISTORY_FILE" ]; then
+    # History is not empty
+    WORD="$(echo -e 'Search any Word\nHistory\nClear History' | rofi -dmenu -theme ~/.config/rofi/dt-center.rasi -i -p 'Search Options:')"
+  else
+    # History is empty
+    WORD="$(echo 'Search any Word' | rofi -dmenu -theme ~/.config/rofi/dt-center.rasi -i -p 'Search:')"
+  fi
+
+  case "$WORD" in
+    "History")
+      # Display history for selection
+      WORD=$(tac "$HISTORY_FILE" | rofi -dmenu -theme ~/.config/rofi/dt-center.rasi -i -p 'Select from history:')
+      if [ -z "$WORD" ]; then
+        printf 'No word selected from history\n' >&2
+        exit 0
+      fi
+      ;;
+    "Clear History")
+      # Confirm clearing history
+      CONFIRM=$(echo -e "no\nyes" | rofi -dmenu -theme ~/.config/rofi/dt-center.rasi -i -p "Are you sure you want to clear history?")
+      if [ "$CONFIRM" = "yes" ]; then
+        > "$HISTORY_FILE"
+        printf 'History cleared\n'
+        exit 0
+      else
+        return
+      fi
+      ;;
+    "")
+      printf 'No word inserted\n' >&2
+      exit 0
+      ;;
+  esac
+
+  TESTWORD="$(dym -c -n=1 "$WORD")"
+
+  if [ "$WORD" != "$TESTWORD" ]; then
+    KEYWORD=$(dym -c "$WORD" | rofi -dmenu -theme ~/.config/rofi/dt-center.rasi -i -l 10 -p "Was '$WORD' a misspelling? (select/no)")
+    if [ "$KEYWORD" = "no" ] || [ "$KEYWORD" = "n" ]; then
+      KEYWORD="$WORD"
+    fi
+  else
+    KEYWORD="$WORD"
+  fi
+
+  if [ -z "${KEYWORD}" ]; then
+    printf 'No word inserted\n' >&2
+    exit 0
+  fi
+
+  add_to_history "$KEYWORD"
+  kitty -e trans -v -d "$KEYWORD"
+}
+
+# Main loop
+while true; do
+  search_word
+  CHOICE=$(echo -e "no\nyes" | rofi -dmenu -theme ~/.config/rofi/dt-center.rasi -l 10 -i -p "Do you want to search another word?")
+  if [ "$CHOICE" != "yes" ]; then
+    exit 0
+  fi
+done

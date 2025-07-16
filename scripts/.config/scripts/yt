@@ -1,0 +1,101 @@
+#!/bin/bash
+
+# Invidious instance for ytfzf
+# invidious_instance="https://vid.puffyan.us"
+invidious_instance=""
+
+# Define the options
+options=("Watch Videos" "Open Subscriptions" "Open History" "Download Videos" "Download Subscriptions")
+
+# Prompt the user to select an option using rofi
+chosen_option=$(printf '%s\n' "${options[@]}" | rofi -dmenu -i -theme ~/.config/rofi/dt-center.rasi -p "Choose an option:")
+
+# Execute commands based on the chosen option
+case $chosen_option in
+"Watch Videos")
+    choice=$(printf "Relevent\nDate\nRating\nViews" | rofi -dmenu -i -theme ~/.config/rofi/dt-center.rasi -p "Sort by:")
+    case $choice in
+    "Relevent")
+        invidious_instance=$invidious_instance ytfzf -fD --sort-by=relevance --pages=2
+        ;;
+    "Date")
+        invidious_instance=$invidious_instance ytfzf -fD --sort-by=upload_date --pages=2
+        ;;
+    "Rating")
+        invidious_instance=$invidious_instance ytfzf -fD --sort-by=rating --pages=2
+        ;;
+    "Views")
+        invidious_instance=$invidious_instance ytfzf -fD --sort-by=view_count --pages=2
+        ;;
+    *)
+        # If an invalid option is chosen
+        echo "Invalid option. Exiting..."
+        exit 1
+        ;;
+    esac
+    ;;
+"Open Subscriptions")
+    # Command for Open Subscriptions
+    invidious_instance=$invidious_instance ytfzf -fcS --fancy-subs -D
+    ;;
+"Open History")
+    # Command for Open History
+    invidious_instance=$invidious_instance ytfzf -H -D
+    ;;
+"Download Videos")
+    choice=$(printf "Relevent\nDate\nRating\nViews" | rofi -dmenu -i -theme ~/.config/rofi/dt-center.rasi -p "Sort by:")
+    case $choice in
+    "Relevent")
+        cd ~/Downloads && invidious_instance=$invidious_instance ytfzf -fd -D --sort-by=relevance --pages=2
+        ;;
+    "Date")
+        cd ~/Downloads && invidious_instance=$invidious_instance ytfzf -fd -D --sort-by=upload_date --pages=2
+        ;;
+    "Rating")
+        cd ~/Downloads && invidious_instance=$invidious_instance ytfzf -fd -D --sort-by=rating --pages=2
+        ;;
+    "Views")
+        cd ~/Downloads && invidious_instance=$invidious_instance ytfzf -fd -D --sort-by=view_count --pages=2
+        ;;
+    *)
+        echo "Invalid option. Exiting..."
+        exit 1
+        ;;
+    esac
+
+    choice=$(printf "Open Folder\nPlay Video\nExit" | rofi -dmenu -i -theme ~/.config/rofi/dt-center.rasi -p "Choose an option:")
+    if [ "$choice" = "Open Folder" ]; then
+        kitty -e ranger ~/Downloads
+        dunstify -i /usr/share/icons/dunst/clock.png "Download Completed from Subscriptions & Opened in Ranger"
+    elif [ "$choice" = "Play Video" ]; then
+        video_name=$(find ~/Downloads -type f -name "*.mkv" -printf "%T@ %p\n" | sort -n | tail -1 | cut -f2- -d" ")
+        dunstify -i /usr/share/icons/dunst/video.png "Download Completed from Subscriptions & Playing Video..."
+        mpv ~/Downloads/"$video_name"
+    else
+        dunstify -i /usr/share/icons/dunst/alert.png "Exiting..."
+        exit 0
+    fi
+    ;;
+"Download Subscriptions")
+    cd ~/Downloads && invidious_instance=$invidious_instance ytfzf -fcS --fancy-subs -d -D
+    choice=$(printf "Open Folder\nPlay Video\nExit" | rofi -dmenu -i -theme ~/.config/rofi/dt-center.rasi -p "Choose an option:")
+    if [ "$choice" = "Open Folder" ]; then
+        kitty -e ranger ~/Downloads
+        dunstify -i /usr/share/icons/dunst/clock.png "Download Completed from Subscriptions & Opened in Ranger"
+    elif [ "$choice" = "Play Video" ]; then
+        video_name=$(find ~/Downloads -type f -name "*.mkv" -printf "%T@ %p\n" | sort -n | tail -1 | cut -f2- -d" ")
+        dunstify -i /usr/share/icons/dunst/video.png "Download Completed from Subscriptions & Playing Video..."
+        mpv ~/Downloads/"$video_name"
+    else
+        dunstify -i /usr/share/icons/dunst/alert.png "Exiting..."
+        exit 0
+    fi
+    ;;
+*)
+    # If an invalid option is chosen
+    echo "Invalid option. Exiting..."
+    exit 1
+    ;;
+esac
+
+exit 0

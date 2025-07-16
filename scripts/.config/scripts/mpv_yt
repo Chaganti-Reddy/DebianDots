@@ -1,0 +1,32 @@
+#!/bin/bash
+
+# Function to prompt user for YouTube URL using dmenu
+get_youtube_url() {
+    youtube_url=$(echo "" | rofi -dmenu -theme ~/.config/rofi/dt-center.rasi -p "Enter YouTube URL:")
+    # Use CTRL+SHIFT+Y in dmenu to paste
+    echo "$youtube_url"
+}
+
+# Main function to open YouTube URL in mpv
+open_youtube_in_mpv() {
+    url=$(get_youtube_url)
+    
+    # Check if the URL is empty or user cancelled
+    if [ -z "$url" ]; then
+        dunstify "No URL provided or cancelled."
+        exit 1
+    fi
+    
+    # Check if the URL starts with "http" to ensure it's a valid URL
+    if [[ "$url" != http* ]]; then
+        dunstify "Invalid URL."
+        exit 1
+    fi
+    
+    # Open URL in mpv
+    mpv "$url"
+}
+
+# Call main function
+open_youtube_in_mpv
+

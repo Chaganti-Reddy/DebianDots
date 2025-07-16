@@ -1,0 +1,93 @@
+#!/bin/sh
+
+# Check if necessary programs are installed
+for prog in rofi jq sxiv dunst; do
+	which "$prog" >/dev/null 2>&1 || { echo "Please install $prog!"; exit 1; }
+done
+
+# Parse arguments
+while [ $# -gt 0 ]; do
+	case $1 in
+		-l|--limit)
+			LIMIT=$2
+			shift 2
+			case $LIMIT in
+				''|*[!0-9]*)
+					echo 'Limit is NaN'
+					exit 1
+					;;
+			esac
+			;;
+		-f|--filter)
+			FILTER=1
+			shift
+			;;
+		-k|--keep)
+			KEEP=1
+			shift
+			;;
+		-v|--verbose)
+			VERBOSE=1
+			shift
+			;;
+		*)
+			subreddit=$1
+			shift
+			;;
+	esac
+done
+
+# Config and cache directories
+configdir="${XDG_CONFIG_HOME:-$HOME/.config}/redyt"
+cachedir="/tmp/redyt"
+
+# Ensure config directory exists
+[ ! -d "$configdir" ] && echo "Directory $configdir does not exist, creating..." && mkdir -p "$configdir"
+
+# Default subreddit
+defaultsub="linuxmemes"
+
+# Ensure subreddit.txt exists
+[ ! -f "$configdir/subreddit.txt" ] && echo "$defaultsub" > "$configdir/subreddit.txt"
+
+# Prompt user for subreddit if not provided
+if [ -z "$subreddit" ]; then
+	subreddit=$(rofi -dmenu -theme ~/.config/rofi/dt-center.rasi -p "Select Subreddit r/" -i -l 10 < "$configdir/subreddit.txt" | awk -F "|" '{print $1}')
+	[ -z "$subreddit" ] && dunstify "No subreddit chosen 🚫" && exit 1
+fi
+
+# Ensure cache directory exists
+[ ! -d "$cachedir" ] && echo "$cachedir does not exist, creating..." && mkdir -p "$cachedir"
+
+dunstify "Redyt" "📩 Downloading your 🖼️ Memes from r/$subreddit..."
+
+# Fetch subreddit feed
+curl -s -H "User-agent: 'your bot 0.1'" "https://www.reddit.com/r/$subreddit/hot.json?limit=${LIMIT:-100}" > "$cachedir/tmp.json"
+
+# Extract image URLs
+imgs=$(jq -r '.data.children[].data.url_overridden_by_dest' < "$cachedir/tmp.json" | grep -E "\.(jpg|png)$" | sort -u)
+
+# Notify if no images found and exit
+if [ -z "$imgs" ]; then
+	dunstify "Redyt" "No images found for subreddit $subreddit, please try again later!"
+	rm "$cachedir/tmp.json"
+	exit 1
+fi
+
+# Download images
+for img in $imgs; do
+	[ ! -e "$cachedir/$(basename "$img")" ] && wget -q -P "$cachedir" "$img"
+done
+
+# Notify if verbose
+dunstify "Redyt" "👍 Download Finished, Enjoy! 😊"
+rm "$cachedir/tmp.json"
+
+# Display images
+sxiv_opts="-a"
+[ "$FILTER" = "1" ] && sxiv_opts="$sxiv_opts -o"
+sxiv $sxiv_opts "$cachedir"
+
+# Clean up cache unless KEEP is set
+[ "$KEEP" != "1" ] && rm -f "$cachedir"/*
+dunstify "Redyt" "🧹 Cache cleaned up!"

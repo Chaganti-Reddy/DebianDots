@@ -1,0 +1,166 @@
+#!/bin/sh
+
+# https://github.com/pystardust/waldl
+# script to find and download wallpapers from wallhaven
+version="0.0.1"
+
+####################
+## User variables ##
+####################
+
+[ -z $VIEWER ] && VIEWER=sxiv
+if [ -n "$1" ] && [ "$1" = "-d" ]; then
+  shift
+  walldir="$1"
+  shift
+else
+  walldir="$HOME/Pictures/pix/"
+fi
+cachedir="$HOME/.cache/wallhaven"
+sxiv_otps=" -tfpo -z 200" 
+max_pages=4
+atleast=1920x1080
+
+[ -e "$HOME/.config/waldlrc" ] && . "$HOME/.config/waldlrc"
+
+# Function to determine the menu system
+sh_menu () {
+	if [ "$XDG_SESSION_TYPE" = "wayland" ]; then
+		rofi -theme "$HOME/.config/rofi/dt-center.rasi" -dmenu -l 0 -p "search wallpapers"
+	else
+		: | dmenu -p "search wallhaven:"
+	fi
+}
+
+##########################
+## getting search query ##
+##########################
+
+[ -n "$*" ] && query="$*" || query=$( sh_menu )
+[ -z "$query" ] && exit 1
+query=$(printf '%s' "$query" | tr ' ' '+' )
+
+####################
+## user variables ##
+####################
+
+choice=$(
+	if [ "$XDG_SESSION_TYPE" = "wayland" ]; then
+		printf "date_added\nrelevance\nrandom\nviews\nfavorites\ntoplist" | rofi -theme "$HOME/.config/rofi/dt-center.rasi" -dmenu -l 10 -p "sort by:"
+	else
+		printf "date_added\nrelevance\nrandom\nviews\nfavorites\ntoplist" | dmenu -i -l 10 -p "sort by:"
+	fi
+)
+
+case $choice in
+  date_added|relevance|random|views|favorites|toplist) sorting=$choice ;;
+  *) sorting=relevance ;;
+esac
+
+choice=$(
+	if [ "$XDG_SESSION_TYPE" = "wayland" ]; then
+		printf "large\noriginal\nsmall" | rofi -theme "$HOME/.config/rofi/dt-center.rasi" -dmenu -l 10 -p "quality:"
+	else
+		printf "large\noriginal\nsmall" | dmenu -i -l 10 -p "quality:"
+	fi
+)
+
+case $choice in
+  large|original|small) quality=$choice ;;
+  *) quality=large ;;
+esac
+
+######################
+## start up commands #
+######################
+
+rm -rf "$cachedir"
+mkdir -p "$walldir" "$cachedir"
+
+sh_info () {
+	printf "%s\n" "$1" >&2
+	notify-send "wallhaven" "$1"
+	[ -n "$2" ] && exit "$2"
+}
+
+dep_ck () {
+	for pr; do
+		command -v $pr >/dev/null 2>&1 || sh_info "command $pr not found, install: $pr" 1
+	done
+}
+dep_ck "$VIEWER" "curl" "jq"
+
+clean_up () {
+	printf "%s\n" "cleaning up..." >&2
+	rm -rf "$datafile" "$cachedir"
+}
+
+datafile="/tmp/wald.$$"
+
+trap "exit" INT TERM
+trap "clean_up" EXIT
+
+##################
+## getting data ##
+##################
+
+get_results () {
+	for page_no in $(seq $max_pages)
+	do
+		{
+			json=$(curl -s -G "https://wallhaven.cc/api/v1/search" \
+					-d "q=$1" \
+					-d "page=$page_no" \
+					-d "atleast=$atleast" \
+					-d "sorting=$sorting"
+				)
+			printf "%s\n" "$json" >> "$datafile"
+		} &
+		sleep 0.001
+	done
+	wait
+}
+
+sh_info "getting data..."
+get_results "$query"
+
+[ -s "$datafile" ] || sh_info "no images found" 1 
+
+############################
+## downloading thumbnails ##
+############################
+
+thumbnails=$( jq -r '.data[]?|.thumbs.'"$quality" < "$datafile")
+
+[ -z "$thumbnails" ] && sh_info "no-results found" 1
+
+sh_info "caching thumbnails..."
+for url in $thumbnails
+do
+		printf "url = %s\n" "$url"
+		printf "output = %s\n" "$cachedir/${url##*/}"
+done | curl -Z -K -
+
+###########################
+## user selection (sxiv) ##
+###########################
+
+image_ids="$($VIEWER $sxiv_otps "$cachedir")"
+[ -z "$image_ids" ] && exit
+
+#########################
+## download wallpapers ##
+#########################
+
+cd "$walldir"
+sh_info "downloading wallpapers..."
+for ids in $image_ids
+do
+	ids="${ids##*/}"
+	ids="${ids%.*}"
+	url=$( jq -r '.data[]?|select( .id == "'$ids'" )|.path' < "$datafile" )
+	printf "url = %s\n" "$url"
+	printf -- "-O\n"
+done | curl -K -
+
+sh_info "wallpapers downloaded in:- '$walldir'"

@@ -1,0 +1,126 @@
+#!/bin/bash
+
+# === CONFIGURATION ===
+SEARCH_DIRS=( "$HOME/Documents" "$HOME/Downloads" "/mnt/Karna/" )
+FILE_TYPES=( pdf docx pptx )  # ← set extensions you care about
+
+CACHE_FILE="$HOME/.cache/rofi_file_list"
+BOOKMARK_FILE="$HOME/.cache/rofi_file_bookmarks"
+SCAN_INTERVAL=300  # ← cache lifespan in seconds
+ROFI_CMD="rofi -dmenu -i -p File"
+DUNSTIFY="dunstify -u low --replace=1337"
+FALLBACK_OPEN="xdg-open"
+
+# === BUILD FIND COMMAND ===
+build_find_command() {
+    for dir in "${SEARCH_DIRS[@]}"; do
+        [ -d "$dir" ] || continue
+        for ext in "${FILE_TYPES[@]}"; do
+            find "$dir" -type f -iname "*.${ext}"
+        done
+    done
+}
+
+# === REFRESH CACHE ===
+refresh_cache() {
+    echo "🔍 Refreshing file list..." >&2
+    > "$CACHE_FILE"
+    build_find_command | while IFS= read -r file; do
+        filename=$(basename "$file")
+        dirpath=$(dirname "$file")
+        display_path="${dirpath/#$HOME/~}"
+        echo "$filename [${display_path}]|$file"
+    done | sort > "$CACHE_FILE"
+
+    # Clean stale bookmarks
+    grep -F '|' "$BOOKMARK_FILE" | while IFS='|' read -r name path; do
+        [[ -f "$path" ]] && echo "$name|$path"
+    done > "${BOOKMARK_FILE}.tmp"
+    mv "${BOOKMARK_FILE}.tmp" "$BOOKMARK_FILE"
+}
+
+# === INIT CACHE & BOOKMARK FILE ===
+[ ! -f "$CACHE_FILE" ] && { mkdir -p "$(dirname "$CACHE_FILE")"; refresh_cache; }
+[ ! -f "$BOOKMARK_FILE" ] && touch "$BOOKMARK_FILE"
+
+# === AUTO REFRESH IF STALE (non-blocking) ===
+now=$(date +%s)
+if [[ -f "$CACHE_FILE" ]]; then
+    last_update=$(date -r "$CACHE_FILE" +%s)
+    if (( now - last_update > SCAN_INTERVAL )); then
+        refresh_cache &  # run in background
+    fi
+else
+    refresh_cache
+fi
+
+# === MAIN LOOP ===
+while true; do
+    # Filter cache entries based on FILE_TYPES
+    mapfile -t options < <(
+        while IFS='|' read -r name path; do
+            ext="${path##*.}"
+            ext="${ext,,}"  # lowercase
+            for allowed in "${FILE_TYPES[@]}"; do
+                [[ "$ext" == "$allowed" ]] && echo "$name|$path"
+            done
+        done < "$CACHE_FILE" | cut -d'|' -f1
+    )
+
+    options+=("🔖 View Bookmarks" "🔁 Refresh File List")
+
+    selection=$(printf "%s\n" "${options[@]}" | $ROFI_CMD -p "File Launcher")
+    [[ -z "$selection" ]] && exit 0
+
+    if [[ "$selection" == "🔁 Refresh File List" ]]; then
+        refresh_cache
+        $DUNSTIFY "File Cache Refreshed" "Updated at $(date +'%H:%M:%S')"
+        continue
+    fi
+
+    if [[ "$selection" == "🔖 View Bookmarks" ]]; then
+        mapfile -t bookmarks < <(cut -d'|' -f1 "$BOOKMARK_FILE")
+        [[ ${#bookmarks[@]} -eq 0 ]] && { $DUNSTIFY "📭 No Bookmarks Yet"; continue; }
+
+        while true; do
+            bm_sel=$(printf "%s\n" "${bookmarks[@]}" | $ROFI_CMD -p "Bookmarks")
+            [[ -z "$bm_sel" ]] && break
+            full_path=$(awk -F'|' -v sel="$bm_sel" '$1 == sel {print $2}' "$BOOKMARK_FILE")
+
+            bm_action=$(printf "✅ Open\n❌ Remove\n🚫 Cancel" | $ROFI_CMD -p "$bm_sel")
+            case "$bm_action" in
+                "✅ Open") ${FALLBACK_OPEN} "$full_path" &>/dev/null & exit 0 ;;
+                "❌ Remove")
+                    grep -Fvx "$bm_sel|$full_path" "$BOOKMARK_FILE" > "${BOOKMARK_FILE}.tmp"
+                    mv "${BOOKMARK_FILE}.tmp" "$BOOKMARK_FILE"
+                    $DUNSTIFY "Bookmark Removed" "$bm_sel"
+                    break
+                    ;;
+                *) break ;;
+            esac
+        done
+        continue
+    fi
+
+    full_path=$(awk -F'|' -v sel="$selection" '$1 == sel {print $2}' "$CACHE_FILE")
+    [[ -z "$full_path" ]] && continue
+    is_bookmarked=$(grep -Fqx "$selection|$full_path" "$BOOKMARK_FILE" && echo yes || echo no)
+
+    if [[ "$is_bookmarked" == "yes" ]]; then
+        action=$(printf "✅ Open\n❌ Remove Bookmark\n🚫 Cancel" | $ROFI_CMD -p "$selection")
+    else
+        action=$(printf "✅ Open\n🔖 Add Bookmark\n🚫 Cancel" | $ROFI_CMD -p "$selection")
+    fi
+
+    case "$action" in
+        "✅ Open") ${FALLBACK_OPEN} "$full_path" &>/dev/null & exit 0 ;;
+        "🔖 Add Bookmark") echo "$selection|$full_path" >> "$BOOKMARK_FILE"; $DUNSTIFY "🔖 Bookmark Added" "$selection" ;;
+        "❌ Remove Bookmark") 
+            grep -Fvx "$selection|$full_path" "$BOOKMARK_FILE" > "${BOOKMARK_FILE}.tmp"
+            mv "${BOOKMARK_FILE}.tmp" "$BOOKMARK_FILE"
+            $DUNSTIFY "❌ Bookmark Removed" "$selection"
+            ;;
+        *) continue ;;
+    esac
+done
+

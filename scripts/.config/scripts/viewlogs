@@ -1,0 +1,59 @@
+#!/bin/bash
+
+# === REQUIREMENTS ===
+command -v jq >/dev/null 2>&1 || { echo "❌ 'jq' is required. Install it."; exit 1; }
+command -v fzf >/dev/null 2>&1 || { echo "❌ 'fzf' is required. Install it."; exit 1; }
+
+# === COLORS ===
+YELLOW='\033[1;33m'
+GREEN='\033[1;32m'
+BLUE='\033[1;34m'
+NC='\033[0m' # No Color
+
+# === FIND FILES ===
+mapfile -t log_files < <(find . -maxdepth 1 -type f \( -iname "readme.md" -o -iname "*.log" \))
+
+if [ ${#log_files[@]} -eq 0 ]; then
+  echo "❌ No README.md or .log files found in this folder."
+  exit 1
+fi
+
+# === AUTO-SELECT IF ONLY ONE ===
+if [ ${#log_files[@]} -eq 1 ]; then
+  selected_file="${log_files[0]}"
+else
+  selected_file=$(printf '%s\n' "${log_files[@]}" | fzf --prompt="📂 Select a log file to view: ")
+  [ -z "$selected_file" ] && echo "❌ Cancelled." && exit 1
+fi
+
+# === DISPLAY LOGS ===
+filename_clean=$(basename "$selected_file")
+echo -e "\n📄 Viewing: $filename_clean"
+echo "----------------------------------------"
+
+if [[ "$selected_file" == *.log ]]; then
+  jq -r --compact-output '.' "$selected_file" | while IFS= read -r line; do
+    ts=$(echo "$line" | jq -r '.timestamp')
+    tags=$(echo "$line" | jq -r '.tags | join(",")')
+    msg=$(echo "$line" | jq -r '.message')
+    echo -e "${YELLOW}[$ts]${NC} ${GREEN}[$tags]${NC}"
+    echo -e "${BLUE}→ $msg${NC}\n"
+  done
+elif [[ "$selected_file" =~ [Rr][Ee][Aa][Dd][Mm][Ee]\.md ]]; then
+  awk '
+    BEGIN { printing = 0 }
+    /^# Logs$/ { printing = 1; next }
+    /^# / && printing { exit }
+    printing && NF > 0 { print }
+  ' "$selected_file" | while IFS= read -r line; do
+    time=$(echo "$line" | sed -n 's/.*- \([0-9:]*\) :.*/\1/p')
+    tags=$(echo "$line" | sed -n 's/.*\[\(.*\)\].*/\1/p')
+    msg=$(echo "$line" | sed -n 's/.*\] \(.*\)/\1/p')
+    [[ -n "$time" ]] && echo -e "${YELLOW}- $time :${NC} ${GREEN}[$tags]${NC} ${BLUE}$msg${NC}"
+  done
+else
+  echo "❌ Unsupported file format."
+fi
+
+echo "----------------------------------------"
+

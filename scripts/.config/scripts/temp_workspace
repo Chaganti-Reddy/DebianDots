@@ -1,0 +1,26 @@
+#!/bin/bash
+
+PRIMARY_MONITOR="eDP-1"       # Your physical display (verify with hyprctl monitors)
+VIRTUAL_MONITOR="HEADLESS-2"  # Virtual output name
+VIRTUAL_WORKSPACE="9"         # Isolated workspace
+
+toggle_virtual_space() {
+    if ! hyprctl monitors | grep -q "$VIRTUAL_MONITOR"; then
+        # 1. Create virtual monitor (right of primary, same resolution)
+        hyprctl output create headless "$VIRTUAL_MONITOR" 1920x1080@60
+        
+        # 2. Position virtual monitor WITHOUT modifying primary
+        hyprctl keyword monitor "$VIRTUAL_MONITOR,1920x1080@60,1920x0,1"
+        
+        # 3. Bind ONLY workspace 9 to virtual monitor
+        hyprctl keyword workspace "$VIRTUAL_MONITOR,$VIRTUAL_WORKSPACE"
+        
+        # notify-send "Virtual Workspace Active" "Workspace 9 isolated | Other workspaces unchanged"
+    else
+        # 4. Clean removal
+        hyprctl output remove "$VIRTUAL_MONITOR"
+        # notify-send "Virtual Workspace Removed" "Workspace 9 deleted"
+    fi
+}
+
+toggle_virtual_space

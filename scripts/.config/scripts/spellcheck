@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+#
+# Script name: dm-dictionary
+# Description: uses the translate package as a dictionary
+# Dependencies: didyoumean
+
+# Set with the flags "-e", "-u","-o pipefail" cause the script to fail
+# if certain things happen, which is a good thing.  Otherwise, we can
+# get hidden bugs that are hard to discover.
+
+set -euo pipefail
+
+WORD="$(echo 'Enter Word' | rofi -dmenu -theme ~/.config/rofi/dt-center.rasi -i )"
+
+if ! [ "${WORD}" ] || [ "${WORD}" = "quit" ]; then
+	printf 'No word inserted\n' >&2
+	exit 0
+fi
+
+CORRECT=$(dym -c "$WORD" | rofi -dmenu -theme ~/.config/rofi/dt-center.rasi -i -l 8 -p "Select Correct Spelling:")
+
+echo $CORRECT | wl-copy
+
+dunstify "Correct Spelling is $CORRECT"

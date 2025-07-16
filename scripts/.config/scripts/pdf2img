@@ -1,0 +1,39 @@
+#!/bin/bash
+
+# Check if at least one argument is provided
+if [ "$#" -lt 1 ]; then
+    echo "Usage: $0 <pdf_file> [output_format (default: png)] [density (default: 300)] [quality (default: 100)]"
+    exit 1
+fi
+
+pdf_file="$1"
+
+# Check if the PDF file exists
+if [ ! -f "$pdf_file" ]; then
+    echo "Error: File '$pdf_file' not found."
+    exit 1
+fi
+
+# Extract the base name without extension
+base_name="${pdf_file%.*}"
+
+# Set default output format, density, and quality if not provided
+output_format="${2:-png}"
+density="${3:-300}"
+quality="${4:-100}"
+
+# Check if ImageMagick is installed
+if ! command -v magick &> /dev/null; then
+    echo "Error: ImageMagick is not installed. Install it using: sudo apt install imagemagick (Debian/Ubuntu) or sudo pacman -S imagemagick (Arch)."
+    exit 1
+fi
+
+# Convert PDF to images using ImageMagick with improved quality
+magick -density "$density" "$pdf_file" -quality "$quality" "${base_name}_%d.${output_format}"
+
+if [ $? -eq 0 ]; then
+    echo "Conversion successful: Created images ${base_name}_%d.${output_format}"
+else
+    echo "Error: Failed to convert PDF to images."
+    exit 1
+fi

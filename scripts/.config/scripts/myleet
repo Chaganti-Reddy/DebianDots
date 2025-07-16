@@ -1,0 +1,124 @@
+#!/bin/bash
+# myleet.sh
+#
+# Usage:
+#   myleet.sh <problem_id|daily>
+#
+# This script automates:
+#   1. Fetching a LeetCode problem (by ID or daily challenge) without printing the question details.
+#   2. Opening the problem for editing in Neovim (per your ~/.leetcode/leetcode.toml settings)
+#   3. Running tests after editing
+#   4. Reopening the problem for further edits if tests fail
+#   5. Checking if the problem has already been submitted (using a submission file)
+#   6. If already submitted, asking if you want to edit your submission and then resubmit.
+
+# Check for required argument.
+if [ $# -lt 1 ]; then
+    echo "Usage: $0 <problem_id|daily>"
+    exit 1
+fi
+
+# The problem identifier (number or 'daily').
+PROB_ID="$1"
+
+# Define the base directory where your LeetCode solutions and submission files are stored.
+BASE_DIR="/mnt/Karna/Git/Project-K/Map/DSA/Leetcode/.cache/"
+mkdir -p "$BASE_DIR"
+cd "$BASE_DIR" || { echo "Failed to change directory to $BASE_DIR"; exit 1; }
+
+# Pick the problem without printing the question to the terminal.
+if [ "$PROB_ID" = "daily" ]; then
+    echo "Fetching the daily challenge..."
+    leetcode pick daily > /dev/null 2>&1
+    FILE_IDENTIFIER="daily"
+else
+    echo "Fetching problem $PROB_ID..."
+    leetcode pick "$PROB_ID" > /dev/null 2>&1
+    FILE_IDENTIFIER="$PROB_ID"
+fi
+
+# Define a file to store submission details.
+SUBMISSION_FILE="${BASE_DIR}/${FILE_IDENTIFIER}.submission"
+
+# If a submission record already exists, show it and offer to edit.
+if [ -f "$SUBMISSION_FILE" ]; then
+    echo "This problem has already been submitted. Submission details:"
+    echo "----------------------------------------"
+    cat "$SUBMISSION_FILE"
+    echo "----------------------------------------"
+    read -p "Do you want to edit your submission? (y/N): " edit_choice
+    if [[ "$edit_choice" =~ ^[Yy]$ ]]; then
+        # Loop until tests pass or you choose not to edit again.
+        while true; do
+            echo "Opening the solution for editing..."
+            leetcode edit "$FILE_IDENTIFIER"
+            echo "Running tests for problem $FILE_IDENTIFIER..."
+            TEST_OUTPUT=$(leetcode test "$FILE_IDENTIFIER")
+            echo "$TEST_OUTPUT"
+            if echo "$TEST_OUTPUT" | grep -qi "Accepted"; then
+                echo "Tests passed!"
+                read -p "Do you want to resubmit your new solution? (y/N): " resubmit_choice
+                if [[ "$resubmit_choice" =~ ^[Yy]$ ]]; then
+                    echo "Resubmitting solution..."
+                    SUBMIT_OUTPUT=$(leetcode exec "$FILE_IDENTIFIER")
+                    echo "$SUBMIT_OUTPUT"
+                    if echo "$SUBMIT_OUTPUT" | grep -qi "Success"; then
+                        echo "$SUBMIT_OUTPUT" > "$SUBMISSION_FILE"
+                        echo "Submission details updated in $SUBMISSION_FILE."
+                    else
+                        echo "Submission might have failed. Please review the output above."
+                    fi
+                    break
+                else
+                    echo "Resubmission cancelled."
+                    break
+                fi
+            else
+                echo "Tests did not pass."
+                read -p "Do you want to edit the solution again? (Y/n): " retry_choice
+                if [[ "$retry_choice" =~ ^[Nn]$ ]]; then
+                    echo "Exiting without a passing solution."
+                    break
+                fi
+            fi
+        done
+    else
+        echo "No editing performed. Exiting."
+    fi
+    exit 0
+fi
+
+# If no previous submission exists, enter the edit/test loop.
+while true; do
+    echo "Launching editor (Neovim) for problem $FILE_IDENTIFIER..."
+    leetcode edit "$FILE_IDENTIFIER"
+    echo "Running tests for problem $FILE_IDENTIFIER..."
+    TEST_OUTPUT=$(leetcode test "$FILE_IDENTIFIER")
+    echo "$TEST_OUTPUT"
+    if echo "$TEST_OUTPUT" | grep -qi "Accepted"; then
+        echo "Tests passed!"
+        break
+    else
+        echo "Tests did not pass."
+        read -p "Do you want to edit the problem again? (Y/n): " retry_choice
+        if [[ "$retry_choice" =~ ^[Nn]$ ]]; then
+            echo "Exiting without a passing solution."
+            exit 1
+        fi
+    fi
+done
+
+read -p "Do you want to submit your solution? (y/N): " submit_choice
+if [[ "$submit_choice" =~ ^[Yy]$ ]]; then
+    echo "Submitting solution..."
+    SUBMIT_OUTPUT=$(leetcode exec "$FILE_IDENTIFIER")
+    echo "$SUBMIT_OUTPUT"
+    if echo "$SUBMIT_OUTPUT" | grep -qi "Success"; then
+        echo "$SUBMIT_OUTPUT" > "$SUBMISSION_FILE"
+        echo "Submission details saved in $SUBMISSION_FILE."
+    else
+        echo "Submission might have failed. Please review the output above."
+    fi
+else
+    echo "Submission skipped."
+fi
