@@ -358,7 +358,7 @@ alias makedwm="cd ~/.config/dwm/dwm && rm config.h && sudo make clean install"
 alias makeslstatus="cd ~/.config/dwm/slstatus/ && rm -rf config.h && make && sudo make install"
 alias makeblocks="cd ~/.config/dwm/dwmblocks/ && rm -rf blocks.h && make && sudo make install"
 alias makest="cd ~/.config/dwm/st && cp config.def.h config.h && make && sudo make install"
-alias dotfiles="cd $HOME/dotfiles/"
+alias dotfiles="cd $HOME/DebianDots"
 alias n="nvim"
 
 nv() {
