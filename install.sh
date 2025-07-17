@@ -119,7 +119,7 @@ check_privileges
 
 sudo apt update && sudo apt upgrade
 
-sudo apt install preload yakuake nala curl wget fzf bash-completion flatpak ffmpeg default-jdk git wget nano vim unzip firmware-linux btop neofetch clang cargo tree tlp tlp-rdw xfsprogs ntfs-3g gnome-disk-utility openssh-server libavcodec-extra timeshift aria2 synaptic qalculate-gtk zoxide gcc g++ bat trash-cliyt-dlp ytfzf zsh zsh-autosuggestions zsh-syntax-highlighting stow python3-pip shellcheck mpv pipx texlive-full ccrypt exa fd-find mpd mpc hugo golang nginx lua5.1 gdb gopls tidy patch maven ripgrep tar time unrar unzip git-lfs lolcat net-tools numlockx rsync bc man-db dnsmasq pipewire pipewire-alsa pipewire-audio wireplumber pipewire-pulse -y
+sudo apt install preload yakuake nala curl wget fzf bash-completion flatpak ffmpeg default-jdk git wget nano vim unzip firmware-linux btop neofetch clang cargo tree tlp tlp-rdw xfsprogs ntfs-3g gnome-disk-utility openssh-server libavcodec-extra timeshift aria2 synaptic qalculate-gtk zoxide gcc g++ bat trash-cliyt-dlp ytfzf zsh zsh-autosuggestions zsh-syntax-highlighting stow python3-pip shellcheck mpv pipx texlive-full ccrypt exa fd-find mpd mpc hugo golang nginx lua5.1 gdb gopls tidy patch maven ripgrep tar time unrar unzip git-lfs lolcat net-tools numlockx rsync bc man-db dnsmasq pipewire pipewire-alsa pipewire-audio wireplumber pipewire-pulse ninja-build gettext cmake curl build-essential -y
 
 flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
 
