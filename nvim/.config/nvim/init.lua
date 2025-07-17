@@ -109,8 +109,6 @@ vim.diagnostic.config {
   end,
 }
 
-os.execute("python ~/.config/nvim/pywal/chadwal.py &> /dev/null &")
-
 local autocmd = vim.api.nvim_create_autocmd
 
 autocmd("Signal", {
