@@ -70,3 +70,10 @@
 
 2025/04/22 (23:45:12) | ===> btop++ v.1.4.0
 2025/04/22 (23:45:12) | WARNING: Intel GPU: Failed to initialize PMU
+
+2025/07/19 (14:32:36) | ===> btop++ v.1.2.13
+2025/07/19 (14:32:36) | ERROR: No UTF-8 locale detected!
+Use --utf-force argument to force start if you're sure your terminal can handle it.
+
+2025/07/19 (14:33:00) | ===> btop++ v.1.2.13
+2025/07/19 (14:33:00) | WARNING: No UTF-8 locale detected! Forcing start with --utf-force argument.
