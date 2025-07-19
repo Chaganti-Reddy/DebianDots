@@ -46,8 +46,8 @@ Tab Middle Click Close Document=true
 Tabbar Tab Limit=0
 
 [KFileDialog Settings]
-Recent Files[$e]=file:$HOME/Downloads/1.py,file:$HOME/miniconda/bin/python
-Recent URLs[$e]=file:$HOME/Downloads/,file:$HOME/miniconda/bin/
+Recent Files[$e]=file:$HOME/Downloads/1.py,file:$HOME/DebianDots/install.sh,file:$HOME/Downloads/1.cpp,file:$HOME/miniconda/bin/python
+Recent URLs[$e]=file:$HOME/Downloads/,file:$HOME/miniconda/bin/,file:$HOME/,file:$HOME/Documents/
 detailViewIconSize=16
 
 [KTextEditor Document]
@@ -159,7 +159,7 @@ Statusbar Line Column Compact Mode=true
 Text Drag And Drop=true
 User Sets Of Chars To Enclose Selection=
 Vi Input Mode Steal Keys=false
-Vi Relative Line Numbers=false
+Vi Relative Line Numbers=true
 Word Completion=true
 Word Completion Minimal Word Length=3
 Word Completion Remove Tail=true
@@ -241,7 +241,7 @@ sortRole=0
 viewShade=81,49,95
 
 [lspclient]
-AllowedServerCommandLines=/usr/bin/bash-language-server start,/usr/bin/pylsp --check-parent-process
+AllowedServerCommandLines=/usr/bin/bash-language-server start,/usr/bin/clangd -log=error --background-index --limit-results=500 --completion-style=bundled,/usr/bin/pylsp --check-parent-process
 AutoHover=true
 AutoImport=true
 BlockedServerCommandLines=
