@@ -294,7 +294,10 @@ alias fgrep='fgrep --color=auto'
 alias df='df -h'
 
 #setlocale
-alias setlocale="sudo localectl set-locale LANG=en_US.UTF-8"
+alias setlocale="sudo localectl set-locale LANG=en_IN.UTF-8"
+
+export LANG=en_IN.UTF-8
+export LC_ALL=en_IN.UTF-8
 
 #ps
 alias psa="ps auxf"
@@ -575,20 +578,3 @@ else
 fi
 unset __conda_setup
 # <<< conda initialize <<<
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
