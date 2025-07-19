@@ -156,14 +156,14 @@ URL=file:///home/karna/DebianDots/gitAutoCommitter.sh
 
 [file:///home/karna/DebianDots/install.sh]
 Bookmarks=
-Checksum=6cdc8b154db3487ceabc19c840f12819f86749e2
+Checksum=878eb273fe786b8d70b7f3f80a33d59326380fea
 Encoding=UTF-8
 Highlighting=Bash
 Highlighting Set By User=false
 Indentation Mode=normal
 Mode=Bash
 Mode Set By User=false
-Time=2025,7,17,6,33,2.859
+Time=2025,7,19,11,25,57.758
 URL=file:///home/karna/DebianDots/install.sh
 
 [file:///home/karna/DebianDots/microsoft.gpg]
@@ -180,14 +180,14 @@ URL=file:///home/karna/DebianDots/microsoft.gpg
 
 [file:///home/karna/DebianDots/nvim/.config/nvim/init.lua]
 Bookmarks=
-Checksum=c19e5942ac4b6e64f1a4fbf4c1bc1e69a8ddd332
+Checksum=42aa43c8dd78421aa421505cfdf674d271284bb6
 Encoding=UTF-8
 Highlighting=Lua
 Highlighting Set By User=false
 Indentation Mode=lua
 Mode=Lua
 Mode Set By User=false
-Time=2025,7,17,6,33,0.429
+Time=2025,7,19,9,55,49.657
 URL=file:///home/karna/DebianDots/nvim/.config/nvim/init.lua
 
 [file:///home/karna/DebianDots/vim/.vimrc]
@@ -226,16 +226,28 @@ Mode Set By User=false
 Time=2025,7,16,14,51,45.688
 URL=file:///home/karna/DebianDots/zsh/.zshrc
 
+[file:///home/karna/Downloads/1.cpp]
+Bookmarks=
+Checksum=5e71bf14616a869442e8dc44cc0f98fcd6136628
+Encoding=UTF-8
+Highlighting=C++
+Highlighting Set By User=false
+Indentation Mode=cstyle
+Mode=C++
+Mode Set By User=false
+Time=2025,7,19,11,25,33.458
+URL=file:///home/karna/Downloads/1.cpp
+
 [file:///home/karna/Downloads/1.py]
 Bookmarks=
-Checksum=1e7104e24088763c6b7bb1c0b6dd0ad6cfae34e2
+Checksum=e69de29bb2d1d6434b8b29ae775ad8c2e48c5391
 Encoding=UTF-8
 Highlighting=Python
 Highlighting Set By User=false
 Indentation Mode=python
 Mode=Python
 Mode Set By User=false
-Time=2025,7,19,9,47,44.172
+Time=2025,7,19,11,25,33.687
 URL=file:///home/karna/Downloads/1.py
 
 [file:///home/karna/Downloads/DebianDotfiles/install.sh]
