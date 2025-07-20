@@ -166,6 +166,30 @@ Mode Set By User=false
 Time=2025,7,19,11,25,57.758
 URL=file:///home/karna/DebianDots/install.sh
 
+[file:///home/karna/DebianDots/kate/.config/kate/externaltools/Run%2520Python%2520%2528Miniconda%2529.ini]
+Bookmarks=
+Checksum=741e4ca9eb79bf56f44943be5488693a5e7312be
+Encoding=UTF-8
+Highlighting=INI Files
+Highlighting Set By User=false
+Indentation Mode=normal
+Mode=INI Files
+Mode Set By User=false
+Time=2025,7,20,5,8,4.179
+URL=file:///home/karna/DebianDots/kate/.config/kate/externaltools/Run%2520Python%2520%2528Miniconda%2529.ini
+
+[file:///home/karna/DebianDots/kate/.config/katerc]
+Bookmarks=
+Checksum=4253421ba0cb5451a5d583234092588bca140589
+Encoding=UTF-8
+Highlighting=None
+Highlighting Set By User=false
+Indentation Mode=normal
+Mode=Normal
+Mode Set By User=false
+Time=2025,7,20,5,7,36.171
+URL=file:///home/karna/DebianDots/kate/.config/katerc
+
 [file:///home/karna/DebianDots/microsoft.gpg]
 Bookmarks=
 Checksum=b2c6f6830bd7dd23244cf03900b6818c37196e89
