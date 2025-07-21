@@ -286,6 +286,18 @@ Mode Set By User=false
 Time=2025,7,16,14,35,55.176
 URL=file:///home/karna/Downloads/DebianDotfiles/install.sh
 
+[file:///home/karna/Downloads/spacecraft-trajectory-ai/README.md]
+Bookmarks=
+Checksum=42d0d86f8f1578d3c6f8038d54faab45bb0ffc1a
+Encoding=UTF-8
+Highlighting=Markdown
+Highlighting Set By User=false
+Indentation Mode=normal
+Mode=Markdown
+Mode Set By User=false
+Time=2025,7,21,6,39,59.902
+URL=file:///home/karna/Downloads/spacecraft-trajectory-ai/README.md
+
 [file:///home/karna/dotfiles/anipy-cli/.config/anipy-cli/config.yaml]
 Bookmarks=
 Checksum=d3189395ecc998899ed0ec6ce48d0bda71476ed7
