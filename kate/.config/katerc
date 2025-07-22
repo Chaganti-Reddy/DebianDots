@@ -20,7 +20,7 @@ Diff Show Style=0
 Elide Tab Text=false
 Expand Tabs=false
 Icon size for left and right sidebar buttons=32
-Last Session=Trajectory-Optimization
+Last Session=quantaCraft
 Modified Notification=false
 Mouse back button action=0
 Mouse forward button action=0
@@ -38,7 +38,7 @@ Show Url Nav Bar=true
 Show output view for message type=1
 Show text for left and right sidebar=false
 Show welcome view for new window=true
-Startup Session=manual
+Startup Session=new
 Stash new unsaved files=true
 Stash unsaved file changes=false
 Sync section size with tab positions=false
@@ -47,7 +47,7 @@ Tab Middle Click Close Document=true
 Tabbar Tab Limit=0
 
 [KFileDialog Settings]
-Recent Files[$e]=file:$HOME/Downloads/1.py,file:$HOME/DebianDots/install.sh,file:$HOME/Downloads/1.cpp,file:$HOME/miniconda/bin/python
+Recent Files[$e]=file:$HOME/DebianDots/install.sh,file:$HOME/Downloads/1.cpp,file:$HOME/miniconda/bin/python
 Recent URLs[$e]=file:$HOME/Downloads/,file:$HOME/miniconda/bin/,file:$HOME/,file:$HOME/Documents/
 detailViewIconSize=16
 
