@@ -252,14 +252,14 @@ URL=file:///home/karna/DebianDots/zsh/.zshrc
 
 [file:///home/karna/Downloads/1.cpp]
 Bookmarks=
-Checksum=5e71bf14616a869442e8dc44cc0f98fcd6136628
+Checksum=e3cd11b6b015e4714d8d0a8d9df6e225572b3d63
 Encoding=UTF-8
 Highlighting=C++
 Highlighting Set By User=false
 Indentation Mode=cstyle
 Mode=C++
 Mode Set By User=false
-Time=2025,7,19,11,25,33.458
+Time=2025,7,21,16,51,40.9
 URL=file:///home/karna/Downloads/1.cpp
 
 [file:///home/karna/Downloads/1.py]
@@ -285,6 +285,78 @@ Mode=Bash
 Mode Set By User=false
 Time=2025,7,16,14,35,55.176
 URL=file:///home/karna/Downloads/DebianDotfiles/install.sh
+
+[file:///home/karna/Downloads/quantaCraft/.gitignore]
+Bookmarks=
+Checksum=b7faf403d915ca307532bb0eb9cceaf0214e8e5b
+Encoding=UTF-8
+Highlighting=Git Ignore
+Highlighting Set By User=false
+Indentation Mode=normal
+Mode=Git Ignore
+Mode Set By User=false
+Time=2025,7,21,14,55,26.171
+URL=file:///home/karna/Downloads/quantaCraft/.gitignore
+
+[file:///home/karna/Downloads/quantaCraft/README.md]
+Bookmarks=
+Checksum=1be14c32f7f3f649487125dbca1aeecee7d4e865
+Encoding=UTF-8
+Highlighting=Markdown
+Highlighting Set By User=false
+Indentation Mode=normal
+Mode=Markdown
+Mode Set By User=false
+Time=2025,7,21,14,52,45.391
+URL=file:///home/karna/Downloads/quantaCraft/README.md
+
+[file:///home/karna/Downloads/quantaCraft/docs/week1.md]
+Bookmarks=
+Checksum=09c8d26eb3d531297c8903f80303d48e9d5dd317
+Encoding=UTF-8
+Highlighting=Markdown
+Highlighting Set By User=false
+Indentation Mode=normal
+Mode=Markdown
+Mode Set By User=false
+Time=2025,7,21,14,55,50.164
+URL=file:///home/karna/Downloads/quantaCraft/docs/week1.md
+
+[file:///home/karna/Downloads/quantum-sim/README.md]
+Bookmarks=
+Checksum=e69de29bb2d1d6434b8b29ae775ad8c2e48c5391
+Encoding=UTF-8
+Highlighting=Markdown
+Highlighting Set By User=false
+Indentation Mode=normal
+Mode=Markdown
+Mode Set By User=false
+Time=2025,7,21,12,25,44.661
+URL=file:///home/karna/Downloads/quantum-sim/README.md
+
+[file:///home/karna/Downloads/quantum-sim/docs/week1.md]
+Bookmarks=
+Checksum=b78bb6462915244f384baa7b11bae4d8241b0a68
+Encoding=UTF-8
+Highlighting=Markdown
+Highlighting Set By User=false
+Indentation Mode=normal
+Mode=Markdown
+Mode Set By User=false
+Time=2025,7,21,12,25,3.221
+URL=file:///home/karna/Downloads/quantum-sim/docs/week1.md
+
+[file:///home/karna/Downloads/quantum-sim/learn/week1.md]
+Bookmarks=
+Checksum=23bcb21cd2d8e8266ff296d69b90571850372127
+Encoding=UTF-8
+Highlighting=Markdown
+Highlighting Set By User=false
+Indentation Mode=normal
+Mode=Markdown
+Mode Set By User=false
+Time=2025,7,21,12,25,12.072
+URL=file:///home/karna/Downloads/quantum-sim/learn/week1.md
 
 [file:///home/karna/Downloads/spacecraft-trajectory-ai/README.md]
 Bookmarks=
