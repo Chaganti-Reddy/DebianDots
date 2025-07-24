@@ -478,3 +478,14 @@ cp ~/DebianDots/Extras/Extras/.wakatime.cfg.cpt ~/
 warning "decrypting your wakatime API key ..."
 sleep 1
 ccrypt -d ~/.wakatime.cfg.cpt
+
+
+### DWM Setup 
+sudo apt install libxft-dev libxinerama-dev libx11-xcb-dev libxcb-res0-dev sxhkd xwallpaper kitty rofi dunst xcompmgr udiskie -y
+sudo pip3 install pywal adblock --break-system-packages
+sudo apt install ffmpeg 7zip jq poppler-utils fd-find ripgrep fzf zoxide imagemagick flameshot xscreensaver pamixer brightnessctl libharfbuzz-dev xinput xdotool -y
+
+# install greenclip 
+cd ~/.local/bin
+wget https://github.com/erebe/greenclip/releases/download/v4.2/greenclip
+chmod +x ~/.local/bin/greenclip
