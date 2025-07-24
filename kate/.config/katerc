@@ -166,7 +166,7 @@ Word Completion Minimal Word Length=3
 Word Completion Remove Tail=true
 
 [KTextEditor::Search]
-Search History=alsa,mpv,install_kvm
+Search History=xrdb,alsa,mpv,install_kvm
 
 [Konsole]
 AutoSyncronize=true
