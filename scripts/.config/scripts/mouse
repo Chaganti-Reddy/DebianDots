@@ -13,6 +13,11 @@ set_property "DLL09D9:00 04F3:3147 Touchpad" "libinput Natural Scrolling Enabled
 set_property "DLL09D9:00 04F3:3147 Touchpad" "libinput Tapping Enabled" 1
 
 # Mouse settings
-set_property "pointer:Razer Razer DeathAdder Essential" "libinput Accel Speed" -0.8
-set_property "pointer:Razer Razer DeathAdder Essential" "libinput Accel Profile Enabled" 1 0
 
+# if xinput list | grep -q "Razer Razer DeathAdder Essential"; then
+# set_property "Razer Razer DeathAdder Essential" "libinput Accel Speed" -0.5
+# set_property "Razer Razer DeathAdder Essential" "libinput Accel Profile Enabled" 1 0
+# fi
+
+xinput --set-prop "pointer:Razer Razer DeathAdder Essential" "libinput Accel Speed" -0.8
+xinput --set-prop "pointer:Razer Razer DeathAdder Essential" "libinput Accel Profile Enabled" 1 0
