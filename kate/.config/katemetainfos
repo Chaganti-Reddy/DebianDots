@@ -214,6 +214,138 @@ Mode Set By User=false
 Time=2025,7,19,9,55,49.657
 URL=file:///home/karna/DebianDots/nvim/.config/nvim/init.lua
 
+[file:///home/karna/DebianDots/scripts/.config/scripts/mouse]
+Bookmarks=
+Checksum=bd925f935ddb14ed13d0a0298cc0e0458aee44e3
+Encoding=UTF-8
+Highlighting=Bash
+Highlighting Set By User=false
+Indentation Mode=normal
+Mode=Bash
+Mode Set By User=false
+Time=2025,7,24,12,14,53.036
+URL=file:///home/karna/DebianDots/scripts/.config/scripts/mouse
+
+[file:///home/karna/DebianDots/suckless/.config/dwm/patches/dwm-alwayscenter-20200625-f04cac6.diff]
+Bookmarks=
+Checksum=03ea9ef2a18acea8e0c65c80e214e99aecf3b06f
+Encoding=UTF-8
+Highlighting=Diff
+Highlighting Set By User=false
+Indentation Mode=normal
+Mode=Diff
+Mode Set By User=false
+Time=2025,7,24,11,40,9.341
+URL=file:///home/karna/DebianDots/suckless/.config/dwm/patches/dwm-alwayscenter-20200625-f04cac6.diff
+
+[file:///home/karna/DebianDots/suckless/.config/dwm/patches/dwm-attachasideandbelow-6.4.diff]
+Bookmarks=
+Checksum=326f75741e30744e358af87c94a04c504fc3e067
+Encoding=UTF-8
+Highlighting=Diff
+Highlighting Set By User=false
+Indentation Mode=normal
+Mode=Diff
+Mode Set By User=false
+Time=2025,7,24,11,41,1.263
+URL=file:///home/karna/DebianDots/suckless/.config/dwm/patches/dwm-attachasideandbelow-6.4.diff
+
+[file:///home/karna/DebianDots/suckless/.dwm/autostart.sh]
+Bookmarks=
+Checksum=535347efea168159a55dcb64870bf51ccc7fa321
+Encoding=UTF-8
+Highlighting=Bash
+Highlighting Set By User=false
+Indentation Mode=normal
+Mode=Bash
+Mode Set By User=false
+Time=2025,7,24,12,42,32.853
+URL=file:///home/karna/DebianDots/suckless/.dwm/autostart.sh
+
+[file:///home/karna/DebianDots/suckless/.dwm/dwm.desktop]
+Bookmarks=
+Checksum=9b0352b0d3d8fc9cab02ac590fa8088ad679d3ca
+Encoding=UTF-8
+Highlighting=.desktop
+Highlighting Set By User=false
+Indentation Mode=normal
+Mode=.desktop
+Mode Set By User=false
+Time=2025,7,24,12,45,34.959
+URL=file:///home/karna/DebianDots/suckless/.dwm/dwm.desktop
+
+[file:///home/karna/DebianDots/suckless/.dwm/newlook]
+Bookmarks=
+Checksum=00b21f2e359ed175fc1cadc6cef89f202042d879
+Encoding=UTF-8
+Highlighting=Bash
+Highlighting Set By User=false
+Indentation Mode=normal
+Mode=Bash
+Mode Set By User=false
+Time=2025,7,24,12,35,32.043
+URL=file:///home/karna/DebianDots/suckless/.dwm/newlook
+
+[file:///home/karna/DebianDots/suckless/.dwm/scripts/alert]
+Bookmarks=
+Checksum=506caf8cc388181f1e616a15857659e9b17926e0
+Encoding=UTF-8
+Highlighting=Bash
+Highlighting Set By User=false
+Indentation Mode=normal
+Mode=Bash
+Mode Set By User=false
+Time=2025,7,24,12,13,49.242
+URL=file:///home/karna/DebianDots/suckless/.dwm/scripts/alert
+
+[file:///home/karna/DebianDots/suckless/.dwm/scripts/clipman.sh]
+Bookmarks=
+Checksum=30e8b2607e75d0d2bbabf7a7732d271bd9ce2fcd
+Encoding=UTF-8
+Highlighting=Bash
+Highlighting Set By User=false
+Indentation Mode=normal
+Mode=Bash
+Mode Set By User=false
+Time=2025,7,24,12,14,13.192
+URL=file:///home/karna/DebianDots/suckless/.dwm/scripts/clipman.sh
+
+[file:///home/karna/DebianDots/suckless/.dwm/scripts/mouse]
+Bookmarks=
+Checksum=bd925f935ddb14ed13d0a0298cc0e0458aee44e3
+Encoding=UTF-8
+Highlighting=Bash
+Highlighting Set By User=false
+Indentation Mode=normal
+Mode=Bash
+Mode Set By User=false
+Time=2025,7,24,12,14,53.871
+URL=file:///home/karna/DebianDots/suckless/.dwm/scripts/mouse
+
+[file:///home/karna/DebianDots/suckless/.dwm/scripts/mpd_notify]
+Bookmarks=
+Checksum=e0c9d9ed306691d154c7dc0b7c33016dcdd707ad
+Encoding=UTF-8
+Highlighting=Bash
+Highlighting Set By User=false
+Indentation Mode=normal
+Mode=Bash
+Mode Set By User=false
+Time=2025,7,24,12,15,0.679
+URL=file:///home/karna/DebianDots/suckless/.dwm/scripts/mpd_notify
+
+[file:///home/karna/DebianDots/suckless/.dwm/sxhkdrc]
+Bookmarks=
+Checksum=dce0e720c8c5cca05ef472a70d1a2dc2a095f222
+Encoding=UTF-8
+Highlighting=None
+Highlighting Set By User=false
+Indentation Mode=normal
+Mode=Normal
+Mode Set By User=false
+Time=2025,7,24,11,45,51.907
+URL=file:///home/karna/DebianDots/suckless/.dwm/sxhkdrc
+
 [file:///home/karna/DebianDots/vim/.vimrc]
 Bookmarks=
 Checksum=8b50a23e9f032a99645b9d5eeb39a674dde32a0b
@@ -502,17 +634,89 @@ Mode Set By User=false
 Time=2025,7,16,13,35,12.149
 URL=file:///media/karna/Karna/.ssh/known_hosts
 
-[file:///mnt/Karna/Git/Karna-Blog/content/posts/Josephus/index.md]
+[file:///mnt/Karna/Git/Karna-Blog/content/posts/IAM-AWS/index.md]
 Bookmarks=
-Checksum=3810122ec327ef81246daf004b63f863127f18af
+Checksum=05fc72291af34bce272d4128613ba93f31fb12fc
 Encoding=UTF-8
 Highlighting=Markdown
 Highlighting Set By User=false
 Indentation Mode=normal
 Mode=Markdown
 Mode Set By User=false
-Time=2025,7,24,7,13,4.134
+Time=2025,7,24,7,17,13.223
+URL=file:///mnt/Karna/Git/Karna-Blog/content/posts/IAM-AWS/index.md
+
+[file:///mnt/Karna/Git/Karna-Blog/content/posts/Josephus/index.md]
+Bookmarks=
+Checksum=cb3ae40c463c11b37156a38379a88e3493c80519
+Encoding=UTF-8
+Highlighting=Markdown
+Highlighting Set By User=false
+Indentation Mode=normal
+Mode=Markdown
+Mode Set By User=false
+Time=2025,7,24,7,19,26.435
 URL=file:///mnt/Karna/Git/Karna-Blog/content/posts/Josephus/index.md
+
+[file:///mnt/Karna/dotfiles/Profile/.xscreensaver]
+Bookmarks=
+Checksum=773e2e943c542fd796b1b0fd4670fcb8c13fcac1
+Encoding=UTF-8
+Highlighting=None
+Highlighting Set By User=false
+Indentation Mode=normal
+Mode=Normal
+Mode Set By User=false
+Time=2025,7,24,12,12,21.701999999999998
+URL=file:///mnt/Karna/dotfiles/Profile/.xscreensaver
+
+[file:///mnt/Karna/dotfiles/dwm/.config/dwm/dwm/drw.c]
+Bookmarks=
+Checksum=6be5dee6fbc00b924e6e41614c7f4df23918ef24
+Encoding=UTF-8
+Highlighting=C
+Highlighting Set By User=false
+Indentation Mode=cstyle
+Mode=C
+Mode Set By User=false
+Time=2025,7,24,11,30,42.995
+URL=file:///mnt/Karna/dotfiles/dwm/.config/dwm/dwm/drw.c
+
+[file:///mnt/Karna/dotfiles/dwm/.config/dwm/dwm/drw.h]
+Bookmarks=
+Checksum=bdbf950981fccf5c93bf52c1e5284b63f2eff690
+Encoding=UTF-8
+Highlighting=C++
+Highlighting Set By User=false
+Indentation Mode=cstyle
+Mode=C++
+Mode Set By User=false
+Time=2025,7,24,11,30,48.326
+URL=file:///mnt/Karna/dotfiles/dwm/.config/dwm/dwm/drw.h
+
+[file:///mnt/Karna/dotfiles/dwm/.config/dwm/dwm/dwm.c]
+Bookmarks=
+Checksum=52d9c4d1e56c3ec03c813ee0c2c92601657b56d0
+Encoding=UTF-8
+Highlighting=C
+Highlighting Set By User=false
+Indentation Mode=cstyle
+Mode=C
+Mode Set By User=false
+Time=2025,7,24,12,6,24.236
+URL=file:///mnt/Karna/dotfiles/dwm/.config/dwm/dwm/dwm.c
+
+[file:///mnt/Karna/dotfiles/dwm/.config/dwm/dwm/patches/dwm-floatrules-6.2.diff]
+Bookmarks=
+Checksum=5dab1e0df6c68dce44be6b432de078c7374000d3
+Encoding=UTF-8
+Highlighting=Diff
+Highlighting Set By User=false
+Indentation Mode=normal
+Mode=Diff
+Mode Set By User=false
+Time=2025,7,24,11,46,44.618
+URL=file:///mnt/Karna/dotfiles/dwm/.config/dwm/dwm/patches/dwm-floatrules-6.2.diff
 
 [file:///mnt/Karna/dotfiles/packages.txt]
 Bookmarks=
