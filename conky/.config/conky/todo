@@ -1,0 +1,61 @@
+#!/bin/bash
+
+# File path to the TODO list
+TODO_FILE="$HOME/todo.md"
+
+# Get today's date in YYYY-MM-DD format
+TODAY=$(date +%Y-%m-%d)
+
+# Check if the TODO file exists else create it 
+if [ ! -f "$TODO_FILE" ]; then
+  touch "$TODO_FILE"
+fi
+
+# Print function to format tasks with colors
+print_task() {
+    local status=$1
+    local task=$2
+    if [[ "$status" == "[x]" ]]; then
+        # Red color with dashed line to indicate completion
+        echo -e "\${color red}-- $task --\${color}"
+    else
+        # Green color for incomplete tasks
+        echo -e "\${color green}$task\${color}"
+    fi
+}
+
+# Convert date to a comparable timestamp
+to_timestamp() {
+    date -d "$1" +"%s"
+}
+
+# Variables to track the current date block
+current_date=""
+print_date=false
+
+# Process the TODO list
+while IFS= read -r line; do
+    # Check if the line is a date (YYYY-MM-DD)
+    if echo "$line" | grep -qE '^[0-9]{4}-[0-9]{2}-[0-9]{2}$'; then
+        current_date="$line"
+        print_date=false
+    elif echo "$line" | grep -qE '^- \[[x ]\] .+'; then
+        # Extract the checkbox status and task
+        status=$(echo "$line" | grep -oP '\[[x ]\]')
+        task=$(echo "$line" | sed -E 's/^- \[[x ]\] //')
+
+        # Compare dates using timestamps
+        current_timestamp=$(to_timestamp "$current_date")
+        today_timestamp=$(to_timestamp "$TODAY")
+
+        # Show today's tasks or incomplete past tasks
+        if [[ "$current_date" == "$TODAY" ]] || ([[ "$status" == "[ ]" ]] && (( current_timestamp < today_timestamp ))); then
+            if ! $print_date; then
+                echo -e "\n$current_date"
+                print_date=true
+            fi
+            print_task "$status" "$task"
+        fi
+    fi
+done < "$TODO_FILE"
+
