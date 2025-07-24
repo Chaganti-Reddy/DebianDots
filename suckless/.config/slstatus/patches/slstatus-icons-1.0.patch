@@ -1,0 +1,126 @@
+From 9c5d98385f0400f2d423334fd40e321b6ac79528 Mon Sep 17 00:00:00 2001
+From: sewn <sewn@disroot.org>
+Date: Sat, 8 Feb 2025 16:46:25 +0300
+Subject: [PATCH] implement icons for volume and battery
+
+---
+ components/battery.c | 19 +++++++++++++++++++
+ components/volume.c  | 17 +++++++++++++++++
+ config.def.h         |  4 ++++
+ slstatus.h           |  2 ++
+ 4 files changed, 42 insertions(+)
+
+diff --git a/components/battery.c b/components/battery.c
+index 1c753f9..7bfd874 100644
+--- a/components/battery.c
++++ b/components/battery.c
+@@ -1,10 +1,29 @@
+ /* See LICENSE file for copyright and license details. */
+ #include <stdio.h>
++#include <stdlib.h>
+ #include <string.h>
+ 
+ #include "../slstatus.h"
+ #include "../util.h"
+ 
++const char *
++battery_icon(const char *bat)
++{
++	unsigned long ul_perc;
++	const char *perc, *state;
++	static const char *icons[][11] = {
++		{ "󰂎", "󰁺", "󰁻", "󰁼", "󰁽", "󰁾", "󰁿", "󰂀", "󰂁", "󰂂", "󰁹" },
++		{ "󰢟", "󰢜", "󰂆", "󰂇", "󰂈", "󰢝", "󰂉", "󰢞", "󰂊", "󰂋", "󰂅" },
++	};
++
++	if (!(perc = battery_perc(bat)) || !(state = battery_state(bat)))
++		return NULL;
++
++	ul_perc = strtoul(perc, NULL, 10);
++
++	return bprintf("%s %d", icons[state[0] == '+'][ul_perc / 10], ul_perc);
++}
++
+ #if defined(__linux__)
+ /*
+  * https://www.kernel.org/doc/html/latest/power/power_supply_class.html
+diff --git a/components/volume.c b/components/volume.c
+index 6cec556..5c597b4 100644
+--- a/components/volume.c
++++ b/components/volume.c
+@@ -1,6 +1,7 @@
+ /* See LICENSE file for copyright and license details. */
+ #include <fcntl.h>
+ #include <stdio.h>
++#include <stdlib.h>
+ #include <string.h>
+ #include <sys/ioctl.h>
+ #include <unistd.h>
+@@ -8,6 +9,22 @@
+ #include "../slstatus.h"
+ #include "../util.h"
+ 
++const char *
++vol_icon(const char *arg)
++{
++	char *p;
++	const char *perc;
++	static const char *icons[] = { "󰕿", "󰖀", "󰕾" };
++	unsigned long ul_perc;
++
++	if (!(perc = vol_perc(arg)))
++		return NULL;
++	p = strrchr(perc, ' ');
++	ul_perc = strtoul(p ? p + 1 : perc, NULL, 10);
++
++	return bprintf("%s %d", p ? "󰝟" : icons[ul_perc / 34], ul_perc);
++}
++
+ #if defined(__OpenBSD__) | defined(__FreeBSD__)
+ 	#include <poll.h>
+ 	#include <sndio.h>
+diff --git a/config.def.h b/config.def.h
+index d805331..98dc3a0 100644
+--- a/config.def.h
++++ b/config.def.h
+@@ -12,6 +12,8 @@ static const char unknown_str[] = "n/a";
+ /*
+  * function            description                     argument (example)
+  *
++ * battery_icon        battery_perc with an icon       battery name (BAT0)
++ *                                                     NULL on OpenBSD/FreeBSD
+  * battery_perc        battery percentage              battery name (BAT0)
+  *                                                     NULL on OpenBSD/FreeBSD
+  * battery_remaining   battery remaining HH:MM         battery name (BAT0)
+@@ -58,6 +60,8 @@ static const char unknown_str[] = "n/a";
+  * uid                 UID of current user             NULL
+  * uptime              system uptime                   NULL
+  * username            username of current user        NULL
++ * vol_icon            vol_perc with an icon           mixer file (/dev/mixer)
++ *                                                     NULL on OpenBSD/FreeBSD
+  * vol_perc            OSS/ALSA volume in percent      mixer file (/dev/mixer)
+  *                                                     NULL on OpenBSD/FreeBSD
+  * wifi_essid          WiFi ESSID                      interface name (wlan0)
+diff --git a/slstatus.h b/slstatus.h
+index 8ef5874..b60c573 100644
+--- a/slstatus.h
++++ b/slstatus.h
+@@ -4,6 +4,7 @@
+ const char *battery_perc(const char *);
+ const char *battery_remaining(const char *);
+ const char *battery_state(const char *);
++const char *battery_icon(const char *);
+ 
+ /* cat */
+ const char *cat(const char *path);
+@@ -77,6 +78,7 @@ const char *uid(const char *unused);
+ const char *username(const char *unused);
+ 
+ /* volume */
++const char *vol_icon(const char *card);
+ const char *vol_perc(const char *card);
+ 
+ /* wifi */
+-- 
+2.48.1
+

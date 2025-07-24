@@ -1,0 +1,40 @@
+#!/bin/sh
+
+# Dependencies: rofi, tesseract, xclip, maim (or import), imagemagick
+
+# Prompt user to keep or remove newlines
+choice=$(printf "remove\nkeep" | rofi -dmenu -p "dOCR - newline?" -theme-str 'window { width: 20em; } listview { lines: 2; }')
+
+# Temp file for the screenshot
+tmpimg=$(mktemp /tmp/ocr-region-XXXX.png)
+
+# Capture region using maim or fallback to import
+if command -v maim >/dev/null 2>&1; then
+    maim -s "$tmpimg"  # lets you select a screen region with the mouse
+elif command -v import >/dev/null 2>&1; then
+    import "$tmpimg"
+else
+    echo "Error: Need 'maim' or 'import' to capture screen region." >&2
+    exit 1
+fi
+
+# Run OCR
+case "$choice" in
+    keep)
+        convert "$tmpimg" -modulate 100,0 -resize 400% -set density 300 png:- | \
+        tesseract stdin stdout -l eng --psm 3 | \
+        sed 's/'$(printf '%b' '\014')'//g;s/|/I/g' | \
+        xclip -i -selection clipboard
+        ;;
+    remove)
+        convert "$tmpimg" -modulate 100,0 -resize 400% -set density 300 png:- | \
+        tesseract stdin stdout -l eng --psm 3 | \
+        sed 's/'$(printf '%b' '\014')'//g;s/|/I/g' | \
+        tr '\n' ' ' | \
+        xclip -i -selection clipboard
+        ;;
+esac
+
+# Clean up
+rm "$tmpimg"
+

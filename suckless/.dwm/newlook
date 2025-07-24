@@ -1,0 +1,27 @@
+#!/bin/bash
+
+wall_dir=$(ls $HOME/Pictures/pix/)
+wall=""
+
+# now search recursively in all the dirs in wall_dir 
+for dir in $wall_dir; do 
+  wall+=$(find $HOME/Pictures/pix/ -type f -name "*.jpg" -o -name "*.png")
+done
+
+# now select a random wallpaper from the list
+wall=$(echo $wall | tr " " "\n" | shuf -n 1)
+
+echo "$wall"
+
+xwallpaper --zoom $wall
+
+wal -c
+wal -i $wall
+xdotool key super+F5
+rm -rf ~/.walcache/
+mkdir ~/.walcache
+cp $wall ~/.walcache/1
+pkill dunst 
+sleep 0.1
+dunst &
+dunstify -u low "Wallpaper and Theme changed"

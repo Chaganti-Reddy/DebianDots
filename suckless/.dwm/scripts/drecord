@@ -1,0 +1,142 @@
+#!/bin/sh
+
+# Set paths
+RECORD_DIR=~/Pictures/Recordings
+LOG_DIR="$RECORD_DIR/logs"
+LIST_FILE="$XDG_RUNTIME_DIR/ffmpeg_recordings.list"
+
+# Prompt for a recording name
+get_name() {
+	name=$(rofi -dmenu -p "Recording name (no spaces):" -theme ~/.config/rofi/dt-center.rasi -theme-str 'window { width: 30em; }')
+	[ -z "$name" ] && exit
+	echo "$name" | tr ' ' '-' | tr -cd '[:alnum:]-_'
+}
+
+# Record video + microphone
+videomic() {
+	name=$(get_name)
+	timestamp="$(date '+%Y-%m-%d_%H-%M-%S')"
+	label="${timestamp}_${name}"
+	outfile="$RECORD_DIR/${label}.mp4"
+	logfile="$LOG_DIR/${label}.log"
+
+	mkdir -p "$LOG_DIR"
+
+	ffmpeg -video_size 1920x1080 -framerate 30 -f x11grab -i :0.0 \
+	       -f pulse -i default \
+	       -c:v libx264 -crf 0 -preset ultrafast "$outfile" \
+	       &> "$logfile" &
+
+	echo "$!|$label|$outfile|$logfile" >> "$LIST_FILE"
+	notify-send "Recording started" "$label"
+}
+
+# Record video + desktop audio
+videodesktop() {
+	AUD=$(pacmd list-sources | grep -B1 "Name: " | grep "index:" | awk '{print $2}' | \
+		rofi -dmenu -p "Audio Source Index:" -theme ~/.config/rofi/dt-center.rasi -theme-str 'window { width: 20em; } listview { lines: 5; }')
+
+	[ -z "$AUD" ] && exit
+
+	name=$(get_name)
+	timestamp="$(date '+%Y-%m-%d_%H-%M-%S')"
+	label="${timestamp}_${name}"
+	outfile="$RECORD_DIR/${label}.mp4"
+	logfile="$LOG_DIR/${label}.log"
+
+	mkdir -p "$LOG_DIR"
+
+	ffmpeg -video_size 1920x1080 -framerate 30 -f x11grab -i :0.0 \
+	       -f pulse -i "$AUD" \
+	       -c:v libx264 -crf 0 -preset ultrafast "$outfile" \
+	       &> "$logfile" &
+
+	echo "$!|$label|$outfile|$logfile" >> "$LIST_FILE"
+	notify-send "Recording started" "$label"
+}
+
+# Record video only
+videoonly() {
+	name=$(get_name)
+	timestamp="$(date '+%Y-%m-%d_%H-%M-%S-no-aud')"
+	label="${timestamp}_${name}"
+	outfile="$RECORD_DIR/${label}.mp4"
+	logfile="$LOG_DIR/${label}.log"
+
+	mkdir -p "$LOG_DIR"
+
+	ffmpeg -video_size 1920x1080 -framerate 30 -f x11grab -i :0.0 \
+	       -preset fast "$outfile" \
+	       &> "$logfile" &
+
+	echo "$!|$label|$outfile|$logfile" >> "$LIST_FILE"
+	notify-send "Recording started" "$label"
+}
+
+# Stop a specific recording
+stoprecording() {
+	[ ! -f "$LIST_FILE" ] && notify-send "No recordings to stop" && return
+
+	temp_file=$(mktemp)
+	choices=""
+
+	# Filter valid processes and rebuild the list file
+	while IFS='|' read -r pid label outfile logfile; do
+		if kill -0 "$pid" 2>/dev/null; then
+			echo "$pid|$label|$outfile|$logfile" >> "$temp_file"
+			choices="${choices}${label} | PID: ${pid} | ${outfile}"$'\n'
+		fi
+	done < "$LIST_FILE"
+
+	mv "$temp_file" "$LIST_FILE"
+	[ ! -s "$LIST_FILE" ] && rm -f "$LIST_FILE"
+
+	[ -z "$choices" ] && notify-send "No active recordings to stop" && return
+
+	selection=$(printf "%s" "$choices" | rofi -dmenu -p "Stop which recording?" \
+		-theme ~/.config/rofi/dt-center.rasi -theme-str 'window { width: 40em; } listview { lines: 8; }')
+
+	[ -z "$selection" ] && return
+
+	chosen_pid=$(echo "$selection" | awk -F'|' '{print $2}' | grep -oE '[0-9]+')
+	chosen_label=$(echo "$selection" | awk -F'|' '{print $1}' | xargs)
+
+	if kill "$chosen_pid" 2>/dev/null; then
+		awk -F'|' -v pid="$chosen_pid" -v label="$chosen_label" '
+			{
+				if ($1 == pid && $2 == label) {
+					if (length($4) > 0) {
+						cmd = "rm -f \"" $4 "\""
+						system(cmd)
+					}
+				} else {
+					print $0
+				}
+			}' "$LIST_FILE" > "${LIST_FILE}.tmp"
+
+		mv "${LIST_FILE}.tmp" "$LIST_FILE"
+		[ ! -s "$LIST_FILE" ] && rm -f "$LIST_FILE"
+
+		# Remove logs dir if empty
+		[ -d "$LOG_DIR" ] && [ -z "$(ls -A "$LOG_DIR")" ] && rmdir "$LOG_DIR"
+
+		notify-send "Recording stopped" "$chosen_label"
+	else
+		notify-send "Failed to stop" "PID $chosen_pid not found"
+	fi
+}
+
+# Main Rofi menu
+selection=$(printf "videomic\nvideodesktop\nvideoonly\nstoprecording" | \
+	rofi -dmenu -i -p "Record mode:" \
+	-theme ~/.config/rofi/dt-center.rasi \
+	-theme-str 'window { width: 20em; } listview { lines: 4; }')
+
+case "$selection" in
+	videomic) videomic ;;
+	videodesktop) videodesktop ;;
+	videoonly) videoonly ;;
+	stoprecording) stoprecording ;;
+	*) exit 1 ;;
+esac
+

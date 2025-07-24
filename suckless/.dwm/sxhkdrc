@@ -1,0 +1,10 @@
+# Reload Keybindings
+super + Escape
+	pkill -USR1 -x sxhkd
+
+super + o; {t, p, m, l}
+  {~/.config/scripts/rofi_todo, ~/.config/scripts/rofi_pdf, ~/.config/scripts/rofi_beats, ~/.config/scripts/rofi_learn}
+
+# Music Controls (mpc)
+super + alt + m; {t, n, p, s}
+    {mpc toggle, mpc next, mpc prev, mpc stop}

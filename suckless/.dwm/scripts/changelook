@@ -1,0 +1,159 @@
+#!/bin/bash
+
+# Directory containing wallpapers
+WALL="$HOME/Pictures/pix/"
+dir=$(ls $WALL)
+choice=$(echo -e "Random\n$dir\nDownload to Collection\nTemporary Wallpaper\nQuit" | dmenu -i -l 10 -p "Choose an Option: ")
+
+WALLPAPER_DIR="$WALL/$choice"
+
+if [ "$choice" = "Random" ]; then
+
+  wall_dir=$(ls $WALL)
+  wall=""
+
+  for dir in $wall_dir; do
+    wall+=$(find $WALL/$dir -type f -name "*.jpg" -o -name "*.png")
+  done
+
+  valid_paper="No"
+  until [ "$valid_paper" = "Yes" ]; do
+    wallk=$(echo $wall | tr " " "\n" | shuf -n 1)
+    echo $wallk
+    xwallpaper --zoom "$wallk"
+    wal -c
+    wal -i "$wallk"
+    xdotool key super+F5
+    rm -rf ~/.walcache/
+    mkdir ~/.walcache
+    cp "$wallk" ~/.walcache/1
+    # pkill dunst
+    # sleep 1
+    # dunst -conf $HOME/dunst/dunstrc_xorg &
+    valid_paper="$(printf "Yes\nNo" | dmenu -i -l 2 -p "Do you like the new wallpaper?")"
+  done
+  # betterlockscreen -u ~/.walcache/1
+  exit 1
+fi
+
+if [ "$choice" = "Download to Collection" ]; then
+  /usr/local/bin/waldl
+  if [ ! -d "$WALL/Wallheaven" ]; then
+    mkdir "$WALL/Wallheaven"
+  fi
+  WALLPAPER_DIR="$WALL/Wallheaven"
+fi
+
+if [ "$choice" = "Temporary Wallpaper" ]; then
+  if [ ! -d "$HOME/.cache/wallheaven" ]; then
+    mkdir $HOME/.cache/wallheaven
+  fi
+  /usr/local/bin/waldl -d $HOME/.cache/wallheaven
+
+  if [ -z "$(ls -A $HOME/.cache/wallheaven)" ]; then
+    dunstify "Directory is empty."
+    exit 1
+  fi
+  choice=$(echo -e "Yes\nNo" | dmenu -i -l 3 -p "Would you like to change wallpaper?")
+  if [ "$choice" = "No" ]; then
+    dunstify "Program terminated."
+    exit 1
+  fi
+  wall=$(ls -t $HOME/.cache/wallheaven | head -n 1)
+  wall="$HOME/.cache/wallheaven/$wall"
+  dunstify "Wallpaper set to $wall"
+  if [ -n "$wall" ]; then
+    xwallpaper --zoom "$wall"
+    wal -c
+    wal -i "$wall"
+    xdotool key super+F5
+    rm -rf ~/.walcache/
+    mkdir ~/.walcache
+    cp "$wall" ~/.walcache/1
+    # pkill dunst 
+    # sleep 1
+    # dunst -conf $HOME/dunst/dunstrc_xorg &
+    # betterlockscreen -u ~/.walcache/1
+  else
+    dunstify "No wallpaper selected."
+  fi
+  exit 1
+fi
+
+if [ "$choice" = "Quit" ]; then
+  dunstify "Program terminated."
+  exit 1
+fi
+
+# if the directory is empty, and its path should not be .cache/wallheaven then download some WALLPAPERS
+
+if [ "$WALLPAPER_DIR" != "$HOME/.cache/wallheaven" ]; then
+  if [ -z "$(ls -A $WALLPAPER_DIR)" ]; then
+    dunstify "Directory is empty."
+    choice=$(echo -e "Download\nExit" | dmenu -i -l 2 -p "Would you like to Download Some?")
+    if [ "$choice" = "Download" ]; then
+      /usr/local/bin/waldl
+    else
+      dunstify "Program terminated."
+      exit 1
+    fi
+  fi
+fi
+
+# List wallpapers in the directory
+WALLPAPERS=$(ls "$WALLPAPER_DIR")
+
+if [ -z "$WALLPAPERS" ]; then
+  dunstify "No wallpapers found."
+  exit 1
+fi
+
+# Prompt user to choose action
+ACTION=$(echo -e "Choose\nRandom\nExit" | dmenu -i -l 5 -p "What would you like to do?")
+
+case $ACTION in
+"Choose")
+  SELECTED_WALLPAPER=$(sxiv -to $WALLPAPER_DIR | awk '{print $NF}')
+  # Check if a wallpaper was selected
+  if [ -n "$SELECTED_WALLPAPER" ]; then
+    # Set the wallpaper
+    xwallpaper --zoom "$SELECTED_WALLPAPER"
+    wal -c
+    wal -i "$SELECTED_WALLPAPER"
+    xdotool key super+F5
+    rm -rf ~/.walcache/
+    mkdir ~/.walcache
+    cp "$SELECTED_WALLPAPER" ~/.walcache/1
+    # pkill dunst 
+    # sleep 1
+    # dunst -conf $HOME/dunst/dunstrc_xorg &
+    # betterlockscreen -u ~/.walcache/1
+  else
+    dunstify "No wallpaper selected."
+  fi
+  ;;
+
+"Random")
+  valid_paper="No"
+  until [ "$valid_paper" = "Yes" ]; do
+    RANDOM_WALLPAPER=$(ls "$WALLPAPER_DIR" | shuf -n 1)
+    xwallpaper --zoom "$WALLPAPER_DIR/$RANDOM_WALLPAPER"
+    wal -c
+    wal -i "$WALLPAPER_DIR/$RANDOM_WALLPAPER"
+    xdotool key super+F5
+    rm -rf ~/.walcache/
+    mkdir ~/.walcache
+    cp "$WALLPAPER_DIR/$RANDOM_WALLPAPER" ~/.walcache/1
+    # pkill dunst 
+    # sleep 1
+    # dunst -conf $HOME/dunst/dunstrc_xorg &
+    valid_paper="$(printf "Yes\nNo" | dmenu -i -l 2 -p "Do you like the new wallpaper?")"
+  done
+  # betterlockscreen -u ~/.walcache/1
+  ;;
+
+"Exit") dunstify "Program terminated" && exit 1 ;;
+*)
+  dunstify "Invalid option."
+  ;;
+esac

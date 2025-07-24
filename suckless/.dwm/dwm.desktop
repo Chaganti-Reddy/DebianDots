@@ -1,0 +1,9 @@
+[Desktop Entry]
+Name=DWM
+Comment=A Suckless WM
+Exec=/usr/local/bin/startdwm.sh
+Terminal=false
+Type=XSession
+
+[X-Window Manager]
+SessionManaged=true
