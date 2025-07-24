@@ -502,6 +502,18 @@ Mode Set By User=false
 Time=2025,7,16,13,35,12.149
 URL=file:///media/karna/Karna/.ssh/known_hosts
 
+[file:///mnt/Karna/Git/Karna-Blog/content/posts/Josephus/index.md]
+Bookmarks=
+Checksum=3810122ec327ef81246daf004b63f863127f18af
+Encoding=UTF-8
+Highlighting=Markdown
+Highlighting Set By User=false
+Indentation Mode=normal
+Mode=Markdown
+Mode Set By User=false
+Time=2025,7,24,7,13,4.134
+URL=file:///mnt/Karna/Git/Karna-Blog/content/posts/Josephus/index.md
+
 [file:///mnt/Karna/dotfiles/packages.txt]
 Bookmarks=
 Checksum=cdc47f6216ed95fcfa7f5404daa2a5dab632ea54
